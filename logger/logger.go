@@ -133,7 +133,7 @@ func Warnln(args ...interface{}) {
 }
 
 func Errorln(args ...interface{}) {
-	logger.Warnln(args...)
+	logger.Errorln(args...)
 }
 
 func Fatalln(args ...interface{}) {
