@@ -11,31 +11,24 @@ import (
 )
 
 type Service interface {
-	Init()
 	Shutdown(ctx context.Context) error
 	RunGracefully(t int)
 	GetQueue() taskq.Queue
+	RegisterWorker(workers ...Worker)
+	AddMessage(ctx context.Context, name string, args ...interface{}) error
 }
 
 type service struct {
-	cfg     *Config
-	factory taskq.Factory
-	queue   taskq.Queue
+	cfg   *Config
+	queue taskq.Queue
 }
 
 func NewService(factory taskq.Factory, args ...ConfigFunc) Service {
+	cfg := generateConfig(args...)
 	return &service{
-		factory: factory,
-		cfg:     generateConfig(args...),
+		cfg:   cfg,
+		queue: factory.RegisterQueue(cfg.ToQueueOptions()),
 	}
-}
-
-func (s *service) Init() {
-	s.initQueue()
-}
-
-func (s *service) initQueue() {
-	s.queue = s.factory.RegisterQueue(s.cfg.ToQueueOptions())
 }
 
 func (s *service) Shutdown(ctx context.Context) error {
@@ -66,4 +59,18 @@ func (s *service) RunGracefully(t int) {
 
 func (s *service) GetQueue() taskq.Queue {
 	return s.queue
+}
+
+func (s *service) RegisterWorker(workers ...Worker) {
+	for _, worker := range workers {
+		for _, task := range worker.GetTasks() {
+			taskq.RegisterTask(task)
+		}
+	}
+}
+
+func (s *service) AddMessage(ctx context.Context, taskName string, args ...interface{}) error {
+	msg := taskq.NewMessage(ctx, args...)
+	msg.TaskName = taskName
+	return s.queue.Add(msg)
 }
