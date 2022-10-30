@@ -101,7 +101,7 @@ func (s *service) RunGracefully(t int) {
 	defer cancel()
 	cancelMainCtx()
 	if err := s.Shutdown(ctx); err != nil {
-		logger.Fatalf("Server Shutdown err: %v", err)
+		logger.Fatalf("Server shutdown err: %v", err)
 	}
 	logger.Infof("Server exiting %v", time.Now())
 }

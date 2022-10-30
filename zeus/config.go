@@ -19,6 +19,19 @@ type Config struct {
 
 type ConfigFunc func(c *Config)
 
+func generateConfig(args ...ConfigFunc) *Config {
+	c := &Config{
+		gRPCPort:   DefaultGRPCPort,
+		restPort:   DefaultRESTPort,
+		enableCORS: DefaultEnableCORS,
+		onlyJSON:   DefaultOnlyJSON,
+	}
+	for i := range args {
+		args[i](c)
+	}
+	return c
+}
+
 func GRPCPort(p string) ConfigFunc {
 	return func(c *Config) {
 		c.gRPCPort = p
@@ -47,17 +60,4 @@ func AddRestServerMuxOpt(opt ...runtime.ServeMuxOption) ConfigFunc {
 	return func(c *Config) {
 		c.restServeMuxOpts = append(c.restServeMuxOpts, opt...)
 	}
-}
-
-func generateConfig(args ...ConfigFunc) *Config {
-	c := &Config{
-		gRPCPort:   DefaultGRPCPort,
-		restPort:   DefaultRESTPort,
-		enableCORS: DefaultEnableCORS,
-		onlyJSON:   DefaultOnlyJSON,
-	}
-	for i := range args {
-		args[i](c)
-	}
-	return c
 }
