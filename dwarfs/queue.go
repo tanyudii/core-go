@@ -11,6 +11,11 @@ import (
 )
 
 type Service interface {
+	Init()
+	Shutdown(ctx context.Context)
+	RunGracefully(t int)
+	GetQueue() taskq.Queue
+	AddTask(tasks ...taskq.TaskOptions)
 }
 
 type service struct {
