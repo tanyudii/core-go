@@ -12,17 +12,15 @@ import (
 
 type Service interface {
 	Init()
-	Shutdown(ctx context.Context)
+	Shutdown(ctx context.Context) error
 	RunGracefully(t int)
 	GetQueue() taskq.Queue
-	AddTask(tasks ...taskq.TaskOptions)
 }
 
 type service struct {
 	cfg     *Config
 	factory taskq.Factory
 	queue   taskq.Queue
-	tasks   []taskq.TaskOptions
 }
 
 func NewService(factory taskq.Factory, args ...ConfigFunc) Service {
@@ -68,10 +66,4 @@ func (s *service) RunGracefully(t int) {
 
 func (s *service) GetQueue() taskq.Queue {
 	return s.queue
-}
-
-func (s *service) AddTask(tasks ...taskq.TaskOptions) {
-	for i := range tasks {
-		taskq.RegisterTask(&tasks[i])
-	}
 }
