@@ -1,4 +1,4 @@
-package queue
+package dwarfs
 
 import "github.com/vmihailenco/taskq/v3"
 
