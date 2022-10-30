@@ -3,7 +3,6 @@ package ectx
 import (
 	"context"
 	"errors"
-	"strconv"
 	"strings"
 )
 
@@ -20,41 +19,37 @@ const (
 	RequestHeaderKeyScopes        = "Scopes"
 	RequestHeaderKeyClientID      = "ClientID"
 	RequestHeaderKeyClientName    = "ClientName"
-	RequestHeaderIsInternalCall   = "IsInternalCall"
 )
 
 type EContext struct {
-	UserID         string
-	UserName       string
-	UserEmail      string
-	UserSerial     string
-	UserType       string
-	CompanyID      string
-	CompanySerial  string
-	CompanyName    string
-	Permissions    string //separated by ","
-	ClientID       string
-	ClientName     string
-	Scopes         string //separated by ","
-	IsInternalCall bool
+	UserID        string
+	UserName      string
+	UserEmail     string
+	UserSerial    string
+	UserType      string
+	CompanyID     string
+	CompanySerial string
+	CompanyName   string
+	Permissions   string //separated by ","
+	ClientID      string
+	ClientName    string
+	Scopes        string //separated by ","
 }
 
 func NewEContext(md ContextMD) *EContext {
-	isInternalCall, _ := strconv.ParseBool(md.Get(strings.ToLower(RequestHeaderIsInternalCall)))
 	return &EContext{
-		UserID:         md.Get(strings.ToLower(RequestHeaderKeyUserID)),
-		UserName:       md.Get(strings.ToLower(RequestHeaderKeyUserName)),
-		UserEmail:      md.Get(strings.ToLower(RequestHeaderKeyUserEmail)),
-		UserSerial:     md.Get(strings.ToLower(RequestHeaderKeyUserSerial)),
-		UserType:       md.Get(strings.ToLower(RequestHeaderKeyUserType)),
-		CompanyID:      md.Get(strings.ToLower(RequestHeaderKeyCompanyID)),
-		CompanySerial:  md.Get(strings.ToLower(RequestHeaderKeyCompanySerial)),
-		CompanyName:    md.Get(strings.ToLower(RequestHeaderKeyCompanyName)),
-		Permissions:    md.Get(strings.ToLower(RequestHeaderKeyPermissions)),
-		ClientID:       md.Get(strings.ToLower(RequestHeaderKeyClientID)),
-		ClientName:     md.Get(strings.ToLower(RequestHeaderKeyClientName)),
-		Scopes:         md.Get(strings.ToLower(RequestHeaderKeyScopes)),
-		IsInternalCall: isInternalCall,
+		UserID:        md.Get(strings.ToLower(RequestHeaderKeyUserID)),
+		UserName:      md.Get(strings.ToLower(RequestHeaderKeyUserName)),
+		UserEmail:     md.Get(strings.ToLower(RequestHeaderKeyUserEmail)),
+		UserSerial:    md.Get(strings.ToLower(RequestHeaderKeyUserSerial)),
+		UserType:      md.Get(strings.ToLower(RequestHeaderKeyUserType)),
+		CompanyID:     md.Get(strings.ToLower(RequestHeaderKeyCompanyID)),
+		CompanySerial: md.Get(strings.ToLower(RequestHeaderKeyCompanySerial)),
+		CompanyName:   md.Get(strings.ToLower(RequestHeaderKeyCompanyName)),
+		Permissions:   md.Get(strings.ToLower(RequestHeaderKeyPermissions)),
+		ClientID:      md.Get(strings.ToLower(RequestHeaderKeyClientID)),
+		ClientName:    md.Get(strings.ToLower(RequestHeaderKeyClientName)),
+		Scopes:        md.Get(strings.ToLower(RequestHeaderKeyScopes)),
 	}
 }
 
@@ -72,7 +67,6 @@ func (c *EContext) ToContextMD(ctx context.Context) context.Context {
 	md.Set(strings.ToLower(RequestHeaderKeyClientID), c.ClientID)
 	md.Set(strings.ToLower(RequestHeaderKeyClientName), c.ClientName)
 	md.Set(strings.ToLower(RequestHeaderKeyScopes), c.Scopes)
-	md.Set(strings.ToLower(RequestHeaderIsInternalCall), strconv.FormatBool(c.IsInternalCall))
 	ctx = NewContext(ctx, c)
 	return md.ToIncoming(ctx)
 }
