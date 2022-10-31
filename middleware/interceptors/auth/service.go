@@ -3,12 +3,12 @@ package auth
 import (
 	"context"
 	"errors"
-	"strings"
-
-	ectx "github.com/tanyudii/core-go/econtext"
+	"github.com/tanyudii/core-go/ectx"
+	"github.com/tanyudii/core-go/errutil"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"strings"
 )
 
 type TokenService interface {
@@ -33,6 +33,10 @@ func newService(
 func (s *service) authenticate(ctx context.Context, info *grpc.UnaryServerInfo) (context.Context, error) {
 	//skip when route is public routes
 	if s.cfg.mapPublicRoutes[info.FullMethod] {
+		return ctx, nil
+	}
+
+	if s.authorizedInternalCall(ctx) {
 		return ctx, nil
 	}
 
@@ -123,7 +127,7 @@ func (s *service) authorizedUserType(session *ectx.EContext, info *grpc.UnarySer
 		}
 	}
 
-	return errors.New("user type is not allowed")
+	return errutil.NewUnauthorizedError("user type is not allowed")
 }
 
 func (s *service) authorizedPermission(session *ectx.EContext, info *grpc.UnaryServerInfo) error {
@@ -150,7 +154,7 @@ func (s *service) authorizedPermission(session *ectx.EContext, info *grpc.UnaryS
 		}
 	}
 
-	return errors.New("user permission is not allowed")
+	return errutil.NewUnauthorizedError("user permission is not allowed")
 }
 
 func (s *service) authorizedScope(session *ectx.EContext, info *grpc.UnaryServerInfo) error {
@@ -177,5 +181,10 @@ func (s *service) authorizedScope(session *ectx.EContext, info *grpc.UnaryServer
 		}
 	}
 
-	return errors.New("user scope is not allowed")
+	return errutil.NewUnauthorizedError("user scope is not allowed")
+}
+
+func (s *service) authorizedInternalCall(ctx context.Context) bool {
+	eCtx, ok := ectx.FromContext(ctx)
+	return ok && eCtx.IsInternalCall
 }
