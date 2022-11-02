@@ -8,6 +8,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"strconv"
 	"strings"
 )
 
@@ -94,8 +95,13 @@ func (s *service) authenticateToken(md *ectx.ContextMD, authorization string) er
 		md.Set(strings.ToLower(ectx.RequestHeaderKeyUserID), tokenInfo.UserID)
 		md.Set(strings.ToLower(ectx.RequestHeaderKeyUserName), tokenInfo.UserName)
 		md.Set(strings.ToLower(ectx.RequestHeaderKeyUserEmail), tokenInfo.UserEmail)
+		md.Set(strings.ToLower(ectx.RequestHeaderKeyUserSerial), tokenInfo.UserSerial)
 		md.Set(strings.ToLower(ectx.RequestHeaderKeyUserType), tokenInfo.UserType)
+		md.Set(strings.ToLower(ectx.RequestHeaderKeyCompanyID), tokenInfo.CompanyID)
+		md.Set(strings.ToLower(ectx.RequestHeaderKeyCompanySerial), tokenInfo.CompanySerial)
+		md.Set(strings.ToLower(ectx.RequestHeaderKeyCompanyName), tokenInfo.CompanyName)
 		md.Set(strings.ToLower(ectx.RequestHeaderKeyPermissions), strings.Join(tokenInfo.Permissions, ","))
+		md.Set(strings.ToLower(ectx.RequestHeaderIsInternalCall), strconv.FormatBool(tokenInfo.IsInternalCall))
 	}
 
 	clientInfo := respTokenInfo.ClientInfo
