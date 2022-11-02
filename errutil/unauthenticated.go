@@ -2,9 +2,11 @@ package errutil
 
 import (
 	"errors"
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"net/http"
+	"strconv"
 )
 
 const (
@@ -13,6 +15,8 @@ const (
 )
 
 type UnauthenticatedError struct {
+	code     int
+	name     string
 	message  string
 	grpcCode codes.Code
 	httpCode int
@@ -20,6 +24,14 @@ type UnauthenticatedError struct {
 
 func (i *UnauthenticatedError) Error() string {
 	return i.message
+}
+
+func (i *UnauthenticatedError) GetCode() int {
+	return i.code
+}
+
+func (i *UnauthenticatedError) GetName() string {
+	return i.name
 }
 
 func (i *UnauthenticatedError) GetGRPCCode() codes.Code {
@@ -30,8 +42,31 @@ func (i *UnauthenticatedError) GetHTTPCode() int {
 	return i.httpCode
 }
 
+func (i *UnauthenticatedError) GetErrorInfoCustom() *errdetails.ErrorInfo {
+	metaData := make(map[string]string)
+
+	//set error code
+	if code := i.GetCode(); code != 0 {
+		metaData[metaKeyErrorName] = strconv.Itoa(code)
+	}
+
+	//set error name
+	if name := i.GetName(); name != "" {
+		metaData[metaKeyErrorCode] = name
+	}
+
+	return &errdetails.ErrorInfo{
+		Metadata: metaData,
+	}
+}
+
 func (i *UnauthenticatedError) GRPCStatus() *status.Status {
-	return status.New(i.GetGRPCCode(), i.Error())
+	stats := status.New(i.GetGRPCCode(), i.Error())
+	//set error info custom
+	if customErr := i.GetErrorInfoCustom(); customErr != nil {
+		stats, _ = stats.WithDetails(customErr)
+	}
+	return stats
 }
 
 func NewUnauthenticatedError(message string) error {
@@ -42,12 +77,26 @@ func NewUnauthenticatedError(message string) error {
 	}
 }
 
-func IsUnauthenticatedErrorGRPC(err error) bool {
-	e, ok := status.FromError(err)
-	if !ok {
-		return false
+func NewUnauthenticatedErrorWithCode(msg string, code int) error {
+	return &UnauthenticatedError{
+		code:     code,
+		message:  msg,
+		grpcCode: unauthenticatedGRPCCode,
+		httpCode: unauthenticatedHTTPCode,
 	}
-	return e.Code() == unauthenticatedGRPCCode
+}
+
+func NewUnauthenticatedErrorWithName(msg string, name string) error {
+	return &UnauthenticatedError{
+		name:     name,
+		message:  msg,
+		grpcCode: unauthenticatedGRPCCode,
+		httpCode: unauthenticatedHTTPCode,
+	}
+}
+
+func IsUnauthenticatedErrorGRPC(err error) bool {
+	return GetErrorGRPCCodeFromErrorGRPC(err) == unauthenticatedGRPCCode
 }
 
 func IsUnauthenticatedError(err error) bool {
