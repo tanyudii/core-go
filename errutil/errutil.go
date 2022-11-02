@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	metaKeyErrorName = "NAME"
-	metaKeyErrorCode = "CODE"
+	metaKeyErrorName = "name"
+	metaKeyErrorCode = "code"
 )
 
 type CustomError interface {
