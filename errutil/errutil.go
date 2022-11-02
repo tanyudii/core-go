@@ -47,7 +47,7 @@ func GetErrorGRPCCodeFromErrorGRPC(err error) codes.Code {
 	return e.Code()
 }
 
-func IsGRPCCustomErrorCode(err error, code int) bool {
+func IsErrorCode(err error, code int) bool {
 	details := GetErrorDetailsFromErrorGRPC(err)
 	if len(details) == 0 {
 		return false
@@ -65,7 +65,7 @@ func IsGRPCCustomErrorCode(err error, code int) bool {
 	return false
 }
 
-func IsGrpcCustomErrorName(err error, name string) bool {
+func IsErrorName(err error, name string) bool {
 	details := GetErrorDetailsFromErrorGRPC(err)
 	if len(details) == 0 {
 		return false
