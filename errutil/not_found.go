@@ -47,12 +47,12 @@ func (i *NotFoundError) GetErrorInfoCustom() *errdetails.ErrorInfo {
 
 	//set error code
 	if code := i.GetCode(); code != 0 {
-		metaData[metaKeyErrorName] = strconv.Itoa(code)
+		metaData[metaKeyErrorCode] = strconv.Itoa(code)
 	}
 
 	//set error name
 	if name := i.GetName(); name != "" {
-		metaData[metaKeyErrorCode] = name
+		metaData[metaKeyErrorName] = name
 	}
 
 	return &errdetails.ErrorInfo{
