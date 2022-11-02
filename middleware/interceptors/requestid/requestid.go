@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	ectx "github.com/tanyudii/core-go/econtext"
+	"github.com/tanyudii/core-go/ectx"
 	"google.golang.org/grpc"
 )
 
