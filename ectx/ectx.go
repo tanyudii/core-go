@@ -79,11 +79,11 @@ func (c *EContext) ToContextMD(ctx context.Context) context.Context {
 
 var reqCtxKey = "ectx"
 
-func NewContext(ctx context.Context, ectx *EContext) context.Context {
-	if ectx == nil {
+func NewContext(ctx context.Context, eCtx *EContext) context.Context {
+	if eCtx == nil {
 		return ctx
 	}
-	return context.WithValue(ctx, reqCtxKey, ectx)
+	return context.WithValue(ctx, reqCtxKey, eCtx)
 }
 
 func FromContext(ctx context.Context) (*EContext, bool) {
