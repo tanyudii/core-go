@@ -89,9 +89,9 @@ func (s *service) authenticateToken(md *ectx.ContextMD, authorization string) er
 	tokenInfo := respTokenInfo.TokenInfo
 	if tokenInfo != nil {
 		md.Set(strings.ToLower(ectx.RequestHeaderKeyUserID), tokenInfo.UserID)
+		md.Set(strings.ToLower(ectx.RequestHeaderKeyUserSerial), tokenInfo.UserSerial)
 		md.Set(strings.ToLower(ectx.RequestHeaderKeyUserName), tokenInfo.UserName)
 		md.Set(strings.ToLower(ectx.RequestHeaderKeyUserEmail), tokenInfo.UserEmail)
-		md.Set(strings.ToLower(ectx.RequestHeaderKeyUserSerial), tokenInfo.UserSerial)
 		md.Set(strings.ToLower(ectx.RequestHeaderKeyUserType), tokenInfo.UserType)
 		md.Set(strings.ToLower(ectx.RequestHeaderKeyCompanyID), tokenInfo.CompanyID)
 		md.Set(strings.ToLower(ectx.RequestHeaderKeyCompanySerial), tokenInfo.CompanySerial)
