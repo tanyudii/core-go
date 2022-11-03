@@ -101,7 +101,7 @@ func (s *service) authenticateToken(md *ectx.ContextMD, authorization string) er
 		md.Set(strings.ToLower(ectx.RequestHeaderKeyCompanySerial), tokenInfo.CompanySerial)
 		md.Set(strings.ToLower(ectx.RequestHeaderKeyCompanyName), tokenInfo.CompanyName)
 		md.Set(strings.ToLower(ectx.RequestHeaderKeyPermissions), strings.Join(tokenInfo.Permissions, ","))
-		md.Set(strings.ToLower(ectx.RequestHeaderIsInternalCall), strconv.FormatBool(tokenInfo.IsInternalCall))
+		md.Set(strings.ToLower(ectx.RequestHeaderKeyIsInternalCall), strconv.FormatBool(tokenInfo.IsInternalCall))
 	}
 
 	clientInfo := respTokenInfo.ClientInfo
