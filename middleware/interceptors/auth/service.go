@@ -12,10 +12,6 @@ import (
 	"strings"
 )
 
-type TokenService interface {
-	TokenInfo(ctx context.Context, jwtToken string) (*TokenInfoResponse, error)
-}
-
 type service struct {
 	tokenService TokenService
 	cfg          *Config
@@ -24,7 +20,7 @@ type service struct {
 func newService(
 	tokenService TokenService,
 	args ...ConfigFunc,
-) *service {
+) Service {
 	return &service{
 		tokenService: tokenService,
 		cfg:          generateConfig(args...),
