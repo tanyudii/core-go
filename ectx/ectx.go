@@ -8,19 +8,19 @@ import (
 )
 
 const (
-	RequestHeaderKeyUserID        = "UserID"
-	RequestHeaderKeyUserName      = "UserName"
-	RequestHeaderKeyUserEmail     = "UserEmail"
-	RequestHeaderKeyUserSerial    = "UserSerial"
-	RequestHeaderKeyUserType      = "UserType"
-	RequestHeaderKeyCompanyID     = "CompanyID"
-	RequestHeaderKeyCompanySerial = "CompanySerial"
-	RequestHeaderKeyCompanyName   = "CompanyName"
-	RequestHeaderKeyPermissions   = "Permissions"
-	RequestHeaderKeyScopes        = "Scopes"
-	RequestHeaderKeyClientID      = "ClientID"
-	RequestHeaderKeyClientName    = "ClientName"
-	RequestHeaderIsInternalCall   = "IsInternalCall"
+	RequestHeaderKeyUserID         = "UserID"
+	RequestHeaderKeyUserName       = "UserName"
+	RequestHeaderKeyUserEmail      = "UserEmail"
+	RequestHeaderKeyUserSerial     = "UserSerial"
+	RequestHeaderKeyUserType       = "UserType"
+	RequestHeaderKeyCompanyID      = "CompanyID"
+	RequestHeaderKeyCompanySerial  = "CompanySerial"
+	RequestHeaderKeyCompanyName    = "CompanyName"
+	RequestHeaderKeyPermissions    = "Permissions"
+	RequestHeaderKeyScopes         = "Scopes"
+	RequestHeaderKeyClientID       = "ClientID"
+	RequestHeaderKeyClientName     = "ClientName"
+	RequestHeaderKeyIsInternalCall = "IsInternalCall"
 )
 
 type EContext struct {
@@ -40,7 +40,7 @@ type EContext struct {
 }
 
 func NewEContext(md ContextMD) *EContext {
-	isInternalCall, _ := strconv.ParseBool(md.Get(strings.ToLower(RequestHeaderIsInternalCall)))
+	isInternalCall, _ := strconv.ParseBool(md.Get(strings.ToLower(RequestHeaderKeyIsInternalCall)))
 	return &EContext{
 		UserID:         md.Get(strings.ToLower(RequestHeaderKeyUserID)),
 		UserName:       md.Get(strings.ToLower(RequestHeaderKeyUserName)),
@@ -72,7 +72,7 @@ func (c *EContext) ToContextMD(ctx context.Context) context.Context {
 	md.Set(strings.ToLower(RequestHeaderKeyClientID), c.ClientID)
 	md.Set(strings.ToLower(RequestHeaderKeyClientName), c.ClientName)
 	md.Set(strings.ToLower(RequestHeaderKeyScopes), c.Scopes)
-	md.Set(strings.ToLower(RequestHeaderIsInternalCall), strconv.FormatBool(c.IsInternalCall))
+	md.Set(strings.ToLower(RequestHeaderKeyIsInternalCall), strconv.FormatBool(c.IsInternalCall))
 	ctx = NewContext(ctx, c)
 	return md.ToIncoming(ctx)
 }
