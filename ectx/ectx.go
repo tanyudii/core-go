@@ -74,7 +74,7 @@ func (c *EContext) ToContextMD(ctx context.Context) context.Context {
 	md.Set(strings.ToLower(RequestHeaderKeyScopes), c.Scopes)
 	md.Set(strings.ToLower(RequestHeaderKeyIsInternalCall), strconv.FormatBool(c.IsInternalCall))
 	ctx = NewContext(ctx, c)
-	return md.ToOutgoing(ctx)
+	return md.ToIncoming(ctx)
 }
 
 var reqCtxKey = "ectx"
