@@ -187,6 +187,6 @@ func (s *service) authorizedScope(session *ectx.EContext, info *grpc.UnaryServer
 }
 
 func (s *service) authorizedInternalCall(ctx context.Context) bool {
-	eCtx, ok := ectx.FromContext(ctx)
-	return ok && eCtx.IsInternal()
+	eCtx := ectx.NewEContext(ectx.FromIncoming(ctx))
+	return eCtx.IsInternal()
 }
