@@ -57,7 +57,7 @@ func (s *service) initRESTHandler(ctx context.Context) (http.Handler, error) {
 }
 
 func (s *service) initHealthCheck(mux *runtime.ServeMux, conn *grpc.ClientConn) error {
-	return mux.HandlePath(http.MethodGet, "_health", func(w http.ResponseWriter, _ *http.Request, _ map[string]string) {
+	return mux.HandlePath(http.MethodGet, "/_health", func(w http.ResponseWriter, _ *http.Request, _ map[string]string) {
 		w.Header().Set("Content-Type", "text/plain")
 		if state := conn.GetState(); state != connectivity.Ready {
 			http.Error(w, fmt.Sprintf("gRPC server is %s", state), http.StatusBadGateway)
