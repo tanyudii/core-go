@@ -8,6 +8,8 @@ import (
 )
 
 const (
+	ContextKey = "ectx"
+
 	RequestHeaderKeyUserID         = "UserID"
 	RequestHeaderKeyUserName       = "UserName"
 	RequestHeaderKeyUserEmail      = "UserEmail"
@@ -23,10 +25,6 @@ const (
 	RequestHeaderKeyIsInternalCall = "IsInternalCall"
 	RequestHeaderKeyAuthorization  = "Authorization"
 	RequestHeaderKeyRequestID      = "RequestID"
-)
-
-var (
-	reqCtxKey = "ectx"
 )
 
 type EContext struct {
@@ -99,11 +97,11 @@ func NewContext(ctx context.Context, eCtx *EContext) context.Context {
 	if eCtx == nil {
 		return ctx
 	}
-	return context.WithValue(ctx, reqCtxKey, eCtx)
+	return context.WithValue(ctx, ContextKey, eCtx)
 }
 
 func FromContext(ctx context.Context) (*EContext, bool) {
-	rc, ok := ctx.Value(reqCtxKey).(*EContext)
+	rc, ok := ctx.Value(ContextKey).(*EContext)
 	return rc, ok
 }
 
