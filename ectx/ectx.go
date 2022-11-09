@@ -21,6 +21,12 @@ const (
 	RequestHeaderKeyClientID       = "ClientID"
 	RequestHeaderKeyClientName     = "ClientName"
 	RequestHeaderKeyIsInternalCall = "IsInternalCall"
+	RequestHeaderKeyAuthorization  = "Authorization"
+	RequestHeaderKeyRequestID      = "RequestID"
+)
+
+var (
+	reqCtxKey = "ectx"
 )
 
 type EContext struct {
@@ -37,6 +43,8 @@ type EContext struct {
 	ClientName     string
 	Scopes         string //separated by ","
 	IsInternalCall bool
+	Authorization  string
+	RequestID      string
 }
 
 func NewEContext(md ContextMD) *EContext {
@@ -55,6 +63,8 @@ func NewEContext(md ContextMD) *EContext {
 		ClientName:     md.Get(strings.ToLower(RequestHeaderKeyClientName)),
 		Scopes:         md.Get(strings.ToLower(RequestHeaderKeyScopes)),
 		IsInternalCall: isInternalCall,
+		Authorization:  md.Get(strings.ToLower(RequestHeaderKeyAuthorization)),
+		RequestID:      md.Get(strings.ToLower(RequestHeaderKeyRequestID)),
 	}
 }
 
@@ -73,11 +83,17 @@ func (c *EContext) ToContextMD(ctx context.Context) context.Context {
 	md.Set(strings.ToLower(RequestHeaderKeyClientName), c.ClientName)
 	md.Set(strings.ToLower(RequestHeaderKeyScopes), c.Scopes)
 	md.Set(strings.ToLower(RequestHeaderKeyIsInternalCall), strconv.FormatBool(c.IsInternalCall))
+	md.Set(strings.ToLower(RequestHeaderKeyAuthorization), c.Authorization)
+	md.Set(strings.ToLower(RequestHeaderKeyRequestID), c.RequestID)
 	ctx = NewContext(ctx, c)
 	return md.ToIncoming(ctx)
 }
 
-var reqCtxKey = "ectx"
+func (c *EContext) IsInternal() bool {
+	return c.IsInternalCall &&
+		c.UserID != "" && c.UserSerial != "" &&
+		c.CompanyID != "" && c.CompanySerial != ""
+}
 
 func NewContext(ctx context.Context, eCtx *EContext) context.Context {
 	if eCtx == nil {
@@ -97,4 +113,36 @@ func FromContextWithErr(ctx context.Context) (*EContext, error) {
 		return nil, errors.New("failed to get eCtx")
 	}
 	return val, nil
+}
+
+func ParseToGrpcCtx(ctx context.Context) context.Context {
+	if r, ok := FromContext(ctx); ok {
+		newCtx := FromIncoming(ctx)
+		newCtx.Add(strings.ToLower(RequestHeaderKeyUserID), r.UserID)
+		newCtx.Add(strings.ToLower(RequestHeaderKeyUserName), r.UserName)
+		newCtx.Add(strings.ToLower(RequestHeaderKeyUserEmail), r.UserEmail)
+		newCtx.Add(strings.ToLower(RequestHeaderKeyUserSerial), r.UserSerial)
+		newCtx.Add(strings.ToLower(RequestHeaderKeyUserType), r.UserType)
+		newCtx.Add(strings.ToLower(RequestHeaderKeyCompanyID), r.CompanyID)
+		newCtx.Add(strings.ToLower(RequestHeaderKeyCompanySerial), r.CompanySerial)
+		newCtx.Add(strings.ToLower(RequestHeaderKeyCompanyName), r.CompanyName)
+		newCtx.Add(strings.ToLower(RequestHeaderKeyPermissions), r.Permissions)
+		newCtx.Add(strings.ToLower(RequestHeaderKeyClientID), r.ClientID)
+		newCtx.Add(strings.ToLower(RequestHeaderKeyClientName), r.ClientName)
+		newCtx.Add(strings.ToLower(RequestHeaderKeyScopes), r.Scopes)
+		newCtx.Add(strings.ToLower(RequestHeaderKeyIsInternalCall), strconv.FormatBool(r.IsInternalCall))
+		newCtx.Add(strings.ToLower(RequestHeaderKeyAuthorization), r.Authorization)
+		newCtx.Add(strings.ToLower(RequestHeaderKeyRequestID), r.RequestID)
+		return newCtx.ToOutgoing(ctx)
+	}
+	return ctx
+}
+
+func ParseToGrpcCtxUseInternalCall(ctx context.Context, isInternalCall bool) context.Context {
+	if r, ok := FromContext(ctx); ok {
+		r2 := *r
+		r2.IsInternalCall = isInternalCall
+		return ParseToGrpcCtx(NewContext(ctx, &r2))
+	}
+	return ctx
 }

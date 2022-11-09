@@ -62,7 +62,7 @@ func (s *service) authenticate(ctx context.Context, info *grpc.UnaryServerInfo) 
 
 func (s *service) authenticateGRPC(ctx context.Context) (context.Context, error) {
 	md := ectx.FromIncoming(ctx)
-	jwtToken := md.Get(strings.ToLower("authorization"))
+	jwtToken := md.Get("authorization")
 	if jwtToken == "" {
 		return nil, status.Errorf(codes.Unauthenticated, "unauthenticated")
 	}
@@ -188,5 +188,5 @@ func (s *service) authorizedScope(session *ectx.EContext, info *grpc.UnaryServer
 
 func (s *service) authorizedInternalCall(ctx context.Context) bool {
 	eCtx, ok := ectx.FromContext(ctx)
-	return ok && eCtx.IsInternalCall
+	return ok && eCtx.IsInternal()
 }
