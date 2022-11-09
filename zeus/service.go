@@ -12,16 +12,11 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	grpcmiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	ginmiddleware "github.com/tanyudii/core-go/gin/middleware"
 	"github.com/tanyudii/core-go/logger"
-	"github.com/tanyudii/core-go/middleware/interceptors/recovery"
-	"github.com/tanyudii/core-go/middleware/interceptors/requestid"
-	muxmiddleware "github.com/tanyudii/core-go/mux/middleware"
 	"github.com/tanyudii/core-go/waitgroup"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 type RESTHandler func(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error)
@@ -59,25 +54,6 @@ func (s *service) Init() {
 	s.initInterceptors()
 	s.initConfigRestServeMuxOpts()
 	s.initGRPCServer()
-}
-
-func (s *service) initInterceptors() {
-	s.RegisterUnaryServerInterceptor(
-		requestid.UnaryServerInterceptor(),
-		recovery.UnaryServerInterceptor(),
-	)
-}
-
-func (s *service) initConfigRestServeMuxOpts() {
-	s.cfg.restServeMuxOpts = append(
-		s.cfg.restServeMuxOpts,
-		runtime.WithRoutingErrorHandler(muxmiddleware.MuxHandleRoutingError),
-		runtime.WithErrorHandler(muxmiddleware.MuxErrorHandler),
-	)
-}
-
-func (s *service) initGRPCServer() {
-	s.server = grpc.NewServer(grpc.UnaryInterceptor(grpcmiddleware.ChainUnaryServer(s.interceptors.serverUnary...)))
 }
 
 func (s *service) Shutdown(ctx context.Context) error {
@@ -184,19 +160,6 @@ func (s *service) ListenAndServeREST(ctx context.Context) error {
 	}
 
 	return nil
-}
-
-func (s *service) initRESTHandler(ctx context.Context) (http.Handler, error) {
-	mux := runtime.NewServeMux(s.cfg.restServeMuxOpts...)
-	endpoint := ":" + s.cfg.gRPCPort
-	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
-	for i := range s.restHandlers {
-		h := s.restHandlers[i]
-		if err := h(ctx, mux, endpoint, opts); err != nil {
-			return nil, err
-		}
-	}
-	return mux, nil
 }
 
 func (s *service) GetServer() *grpc.Server {
