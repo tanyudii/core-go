@@ -46,13 +46,15 @@ func (s *service) authenticate(ctx context.Context, info *grpc.UnaryServerInfo) 
 		return nil, err
 	}
 
+	//if user authorized with type, will be skip other middleware
+	if s.authorizedUserType(session, info) {
+		return newCtx, nil
+	}
+
 	if err = s.authorizedPermission(session, info); err != nil {
 		return nil, status.Error(codes.PermissionDenied, err.Error())
 	}
 	if err = s.authorizedScope(session, info); err != nil {
-		return nil, status.Error(codes.PermissionDenied, err.Error())
-	}
-	if err = s.authorizedUserType(session, info); err != nil {
 		return nil, status.Error(codes.PermissionDenied, err.Error())
 	}
 
@@ -109,25 +111,22 @@ func (s *service) authenticateToken(md *ectx.ContextMD, authorization string) er
 	return nil
 }
 
-func (s *service) authorizedUserType(session *ectx.EContext, info *grpc.UnaryServerInfo) error {
-	//skip immediately when route not configured
-	routeUserTypes, ok := s.cfg.mapUserTypeRoutes[info.FullMethod]
-	if !ok {
-		return nil
-	}
-
+func (s *service) authorizedUserType(session *ectx.EContext, info *grpc.UnaryServerInfo) bool {
 	userType := session.UserType
-	if userType == "" {
-		return errors.New("user type is not configured")
+
+	//skip immediately when route not configured or user type empty
+	routeUserTypes, ok := s.cfg.mapUserTypeRoutes[info.FullMethod]
+	if !ok || userType == "" {
+		return false
 	}
 
 	for _, ut := range routeUserTypes {
 		if strings.ToLower(ut) == strings.ToLower(userType) {
-			return nil
+			return true
 		}
 	}
 
-	return errutil.NewUnauthorizedError("user type is not allowed")
+	return false
 }
 
 func (s *service) authorizedPermission(session *ectx.EContext, info *grpc.UnaryServerInfo) error {
