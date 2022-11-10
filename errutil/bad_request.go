@@ -76,6 +76,11 @@ func (i *BadRequestError) GetErrorInfoCustom() *errdetails.ErrorInfo {
 		metaData[metaKeyErrorName] = name
 	}
 
+	//return nil if metadata key is empty
+	if len(metaData) == 0 {
+		return nil
+	}
+
 	return &errdetails.ErrorInfo{
 		Metadata: metaData,
 	}
