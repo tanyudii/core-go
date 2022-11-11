@@ -113,10 +113,18 @@ func (s *service) authenticateToken(md *ectx.ContextMD, authorization string) er
 
 func (s *service) authorizedUserType(session *ectx.EContext, info *grpc.UnaryServerInfo) bool {
 	userType := session.UserType
+	if userType == "" {
+		return false
+	}
+
+	//if trusted user type continue to process request
+	if s.cfg.mapUserTypeTrusted[userType] {
+		return true
+	}
 
 	//skip immediately when route not configured or user type empty
 	routeUserTypes, ok := s.cfg.mapUserTypeRoutes[info.FullMethod]
-	if !ok || userType == "" {
+	if !ok {
 		return false
 	}
 

@@ -1,11 +1,13 @@
 package auth
 
+type MapUserTypeTrusted map[string]bool
 type MapPublicRoutes map[string]bool
 type MapUserTypeRoutes map[string][]string
 type MapPermissionRoutes map[string][]string
 type MapScopeRoutes map[string][]string
 
 type Config struct {
+	mapUserTypeTrusted  MapUserTypeTrusted
 	mapPublicRoutes     MapPublicRoutes
 	mapUserTypeRoutes   MapUserTypeRoutes
 	mapPermissionRoutes MapPermissionRoutes
@@ -17,6 +19,12 @@ type ConfigFunc func(c *Config)
 func PublicRoutes(r MapPublicRoutes) ConfigFunc {
 	return func(c *Config) {
 		c.mapPublicRoutes = r
+	}
+}
+
+func UserTypeTrusted(r MapUserTypeTrusted) ConfigFunc {
+	return func(c *Config) {
+		c.mapUserTypeTrusted = r
 	}
 }
 
