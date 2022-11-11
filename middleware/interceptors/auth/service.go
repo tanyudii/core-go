@@ -118,8 +118,10 @@ func (s *service) authorizedUserType(session *ectx.EContext, info *grpc.UnarySer
 	}
 
 	//if trusted user type continue to process request
-	if s.cfg.mapUserTypeTrusted[userType] {
-		return true
+	for ut := range s.cfg.mapUserTypeTrusted {
+		if strings.ToLower(ut) == strings.ToLower(userType) {
+			return true
+		}
 	}
 
 	//skip immediately when route not configured or user type empty
