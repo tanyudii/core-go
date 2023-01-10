@@ -17,14 +17,16 @@ var (
 )
 
 type Config struct {
-	locale          locales.Translator
-	localeName      string
-	uni             *ut.UniversalTranslator
-	trans           ut.Translator
-	registerTransFn func(v *validator.Validate, trans ut.Translator) (err error)
+	locale            locales.Translator
+	localeName        string
+	uni               *ut.UniversalTranslator
+	trans             ut.Translator
+	registerTransFunc TransFunc
 }
 
 type ConfigFunc func(c *Config)
+
+type TransFunc func(v *validator.Validate, trans ut.Translator) (err error)
 
 func generateConfig(args ...ConfigFunc) *Config {
 	c := &Config{locale: DefaultLocale, localeName: DefaultLocaleName}
@@ -37,8 +39,8 @@ func generateConfig(args ...ConfigFunc) *Config {
 	if c.trans == nil {
 		c.trans = c.defaultTrans()
 	}
-	if c.registerTransFn == nil {
-		c.registerTransFn = entranslations.RegisterDefaultTranslations
+	if c.registerTransFunc == nil {
+		c.registerTransFunc = entranslations.RegisterDefaultTranslations
 	}
 	return c
 }
@@ -50,8 +52,20 @@ func Locale(l locales.Translator, name string) ConfigFunc {
 	}
 }
 
+func Uni(uni *ut.UniversalTranslator) ConfigFunc {
+	return func(c *Config) {
+		c.uni = uni
+	}
+}
+
 func Trans(t ut.Translator) ConfigFunc {
 	return func(c *Config) {
 		c.trans = t
+	}
+}
+
+func RegisterTransFunc(fn TransFunc) ConfigFunc {
+	return func(c *Config) {
+		c.registerTransFunc = fn
 	}
 }

@@ -15,7 +15,7 @@ func (s *service) init() {
 		}
 		return name
 	})
-	_ = s.cfg.registerTransFn(s.validate, s.cfg.trans)
+	_ = s.cfg.registerTransFunc(s.validate, s.cfg.trans)
 }
 
 func (s *service) transformField(field string) string {
