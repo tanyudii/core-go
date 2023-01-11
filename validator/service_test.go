@@ -15,8 +15,18 @@ type User struct {
 }
 
 type Address struct {
-	City       string `validate:"required"`
-	PostalCode string `validate:"required" name:"Postal code"`
+	City       string   `validate:"required"`
+	PostalCode string   `validate:"required" name:"Postal code"`
+	Country    *Country `validate:"required"`
+}
+
+type Country struct {
+	Name      string      `validate:"required"`
+	Provinces []*Province `validate:"required,dive"`
+}
+
+type Province struct {
+	Name string `validate:"required"`
 }
 
 type Bank struct {
@@ -36,8 +46,25 @@ func TestNormalValidate(t *testing.T) {
 				Name:  "John Doe",
 				Email: "admin@example.com",
 				Addresses: []*Address{
-					{City: "Jakarta", PostalCode: "15100"},
-					{City: "Tangerang", PostalCode: "15110"},
+					{
+						City:       "Jakarta",
+						PostalCode: "15100",
+						Country: &Country{
+							Name:      "Indonesia",
+							Provinces: []*Province{},
+						},
+					},
+					{
+						City:       "Tangerang",
+						PostalCode: "15110",
+						Country: &Country{
+							Name: "Indonesia",
+							Provinces: []*Province{
+								{Name: "Jakarta"},
+								{Name: "Banten"},
+							},
+						},
+					},
 				},
 				Bank: &Bank{
 					Number: "9988776655",
@@ -63,14 +90,27 @@ func TestErrorValidate(t *testing.T) {
 		Request *User
 		Error   error
 	}{
-
 		"[F] Error Basic Field": {
 			Request: &User{
 				Name:  "",
 				Email: "",
 				Addresses: []*Address{
-					{City: "Jakarta", PostalCode: "15100"},
-					{City: "Tangerang", PostalCode: "15110"},
+					{
+						City:       "Jakarta",
+						PostalCode: "15100",
+						Country: &Country{
+							Name:      "Indonesia",
+							Provinces: []*Province{},
+						},
+					},
+					{
+						City:       "Tangerang",
+						PostalCode: "15110",
+						Country: &Country{
+							Name:      "Indonesia",
+							Provinces: []*Province{},
+						},
+					},
 				},
 				Bank: &Bank{
 					Number: "9988776655",
@@ -89,6 +129,15 @@ func TestErrorValidate(t *testing.T) {
 				Addresses: []*Address{
 					{},
 					{},
+					{
+						Country: &Country{
+							Name: "",
+							Provinces: []*Province{
+								{Name: "Example"},
+								{},
+							},
+						},
+					},
 				},
 				Bank: &Bank{
 					Number: "9988776655",
@@ -96,10 +145,16 @@ func TestErrorValidate(t *testing.T) {
 				},
 			},
 			Error: errutil.NewBadRequestErrorUsingFieldsOrNil(errutil.ErrorField{
-				"addresses.0.city":       "City is a required field",
-				"addresses.0.postalCode": "Postal code is a required field",
-				"addresses.1.city":       "City is a required field",
-				"addresses.1.postalCode": "Postal code is a required field",
+				"addresses.0.city":                     "City is a required field",
+				"addresses.0.postalCode":               "Postal code is a required field",
+				"addresses.0.country":                  "Country is a required field",
+				"addresses.0.country.provinces.1.name": "Name is a required field",
+				"addresses.1.city":                     "City is a required field",
+				"addresses.1.postalCode":               "Postal code is a required field",
+				"addresses.1.country":                  "Country is a required field",
+				"addresses.2.city":                     "City is a required field",
+				"addresses.2.postalCode":               "Postal code is a required field",
+				"addresses.2.country.name":             "Name is a required field",
 			}),
 		},
 	}
