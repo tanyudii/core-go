@@ -16,7 +16,7 @@ type User struct {
 
 type Address struct {
 	City       string   `validate:"required"`
-	PostalCode string   `validate:"required" name:"Postal code"`
+	PostalCode string   `validate:"required" label:"Postal code"`
 	Country    *Country `validate:"required"`
 }
 
@@ -148,13 +148,13 @@ func TestErrorValidate(t *testing.T) {
 				"addresses.0.city":                     "City is a required field",
 				"addresses.0.postalCode":               "Postal code is a required field",
 				"addresses.0.country":                  "Country is a required field",
-				"addresses.0.country.provinces.1.name": "Name is a required field",
 				"addresses.1.city":                     "City is a required field",
 				"addresses.1.postalCode":               "Postal code is a required field",
 				"addresses.1.country":                  "Country is a required field",
 				"addresses.2.city":                     "City is a required field",
 				"addresses.2.postalCode":               "Postal code is a required field",
 				"addresses.2.country.name":             "Name is a required field",
+				"addresses.2.country.provinces.1.name": "Name is a required field",
 			}),
 		},
 	}

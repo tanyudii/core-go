@@ -9,11 +9,7 @@ import (
 
 func (s *service) init() {
 	s.validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
-		name := strings.SplitN(fld.Tag.Get("name"), ",", 2)[0]
-		if name == "-" {
-			return ""
-		}
-		return name
+		return fld.Tag.Get("label")
 	})
 	_ = s.cfg.registerTransFunc(s.validate, s.cfg.trans)
 }
