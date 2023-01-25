@@ -32,8 +32,8 @@ func (s *service) authenticate(ctx context.Context, info *grpc.UnaryServerInfo) 
 		return ctx, nil
 	}
 
-	if s.authorizedInternalCall(ctx) {
-		return ctx, nil
+	if newCtx, ok := s.authorizedInternalCall(ctx); ok {
+		return newCtx, nil
 	}
 
 	newCtx, err := s.authenticateGRPC(ctx)
@@ -193,7 +193,8 @@ func (s *service) authorizedScope(session *ectx.EContext, info *grpc.UnaryServer
 	return errutil.NewUnauthorizedError("user scope is not allowed")
 }
 
-func (s *service) authorizedInternalCall(ctx context.Context) bool {
-	eCtx := ectx.NewEContext(ectx.FromIncoming(ctx))
-	return eCtx.IsInternal()
+func (s *service) authorizedInternalCall(ctx context.Context) (context.Context, bool) {
+	md := ectx.FromIncoming(ctx)
+	reqCtx := ectx.NewEContext(md)
+	return md.ToIncoming(ectx.NewContext(ctx, reqCtx)), reqCtx.IsInternal()
 }

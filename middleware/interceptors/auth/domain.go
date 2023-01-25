@@ -18,7 +18,7 @@ type (
 		authorizedUserType(session *ectx.EContext, info *grpc.UnaryServerInfo) bool
 		authorizedPermission(session *ectx.EContext, info *grpc.UnaryServerInfo) error
 		authorizedScope(session *ectx.EContext, info *grpc.UnaryServerInfo) error
-		authorizedInternalCall(ctx context.Context) bool
+		authorizedInternalCall(ctx context.Context) (context.Context, bool)
 	}
 )
 

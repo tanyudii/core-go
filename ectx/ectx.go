@@ -113,8 +113,12 @@ func FromContextWithErr(ctx context.Context) (*EContext, error) {
 	return val, nil
 }
 
-func ParseToGrpcCtx(ctx context.Context) context.Context {
+func ParseToGrpcCtx(ctx context.Context, internalCall ...bool) context.Context {
 	if r, ok := FromContext(ctx); ok {
+		isInternalCall := true
+		if len(internalCall) > 0 {
+			isInternalCall = internalCall[0]
+		}
 		newCtx := FromIncoming(ctx)
 		newCtx.Add(strings.ToLower(RequestHeaderKeyUserID), r.UserID)
 		newCtx.Add(strings.ToLower(RequestHeaderKeyUserName), r.UserName)
@@ -128,19 +132,10 @@ func ParseToGrpcCtx(ctx context.Context) context.Context {
 		newCtx.Add(strings.ToLower(RequestHeaderKeyClientID), r.ClientID)
 		newCtx.Add(strings.ToLower(RequestHeaderKeyClientName), r.ClientName)
 		newCtx.Add(strings.ToLower(RequestHeaderKeyScopes), r.Scopes)
-		newCtx.Add(strings.ToLower(RequestHeaderKeyIsInternalCall), strconv.FormatBool(r.IsInternalCall))
+		newCtx.Add(strings.ToLower(RequestHeaderKeyIsInternalCall), strconv.FormatBool(isInternalCall))
 		newCtx.Add(strings.ToLower(RequestHeaderKeyAuthorization), r.Authorization)
 		newCtx.Add(strings.ToLower(RequestHeaderKeyRequestID), r.RequestID)
 		return newCtx.ToOutgoing(ctx)
-	}
-	return ctx
-}
-
-func ParseToGrpcCtxUseInternalCall(ctx context.Context, isInternalCall bool) context.Context {
-	if r, ok := FromContext(ctx); ok {
-		r2 := *r
-		r2.IsInternalCall = isInternalCall
-		return ParseToGrpcCtx(NewContext(ctx, &r2))
 	}
 	return ctx
 }
