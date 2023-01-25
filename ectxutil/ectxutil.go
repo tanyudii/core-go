@@ -44,3 +44,11 @@ func GetCompanySerial(ctx context.Context) (string, error) {
 	}
 	return eCtx.CompanySerial, nil
 }
+
+func DuplicateCtx(ctx context.Context) (context.Context, error) {
+	eCtx, err := ectx.FromContextWithErr(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return ectx.NewContext(context.Background(), eCtx), nil
+}
