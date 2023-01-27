@@ -204,7 +204,7 @@ func (s *service) ListenAndServePrometheus(ctx context.Context) (err error) {
 		}
 	}()
 
-	logger.Info("starting Prometheus server at :%s...", s.cfg.prometheusPort)
+	logger.Infof("starting Prometheus server at :%s...", s.cfg.prometheusPort)
 	if err = srv.ListenAndServe(); err != http.ErrServerClosed {
 		logger.Errorf("ListenAndServePrometheus: failed to listen and serve: %v\n", err)
 		return err
