@@ -33,6 +33,10 @@ func (s *service) initGRPCServer() {
 	s.server = grpc.NewServer(grpc.UnaryInterceptor(grpcmiddleware.ChainUnaryServer(s.interceptors.serverUnary...)))
 }
 
+func (s *service) initDefaultPrometheusCollectors() {
+	s.prometheusCollectors = append(s.prometheusCollectors, RpcDurationsHistogram)
+}
+
 func (s *service) initRESTHandler(ctx context.Context) (http.Handler, error) {
 	mux := runtime.NewServeMux(s.cfg.restServeMuxOpts...)
 

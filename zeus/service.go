@@ -3,6 +3,10 @@ package zeus
 import (
 	"context"
 	"errors"
+	"fmt"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	muxmiddleware "github.com/tanyudii/core-go/mux/middleware"
 	"net"
 	"net/http"
 	"os"
@@ -19,6 +23,14 @@ import (
 	"google.golang.org/grpc"
 )
 
+var (
+	RpcDurationsHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "grpc_rpc_durations_histogram",
+		Help:    "GRPC RPC latency distributions.",
+		Buckets: []float64{5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000},
+	}, []string{"httpCode", "grpcCode", "grpcMethod", "statusCode"})
+)
+
 type RESTHandler func(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error)
 
 type Service interface {
@@ -29,15 +41,17 @@ type Service interface {
 	RunServers(ctx context.Context) <-chan error
 	ListenAndServeGRPC(ctx context.Context) error
 	ListenAndServeREST(ctx context.Context) error
+	ListenAndServePrometheus(ctx context.Context) error
 	RegisterUnaryServerInterceptor(i ...grpc.UnaryServerInterceptor)
 	RegisterRESTHandler(handlers ...RESTHandler)
 }
 
 type service struct {
-	cfg          *Config
-	server       *grpc.Server
-	interceptors Interceptors
-	restHandlers []RESTHandler
+	cfg                  *Config
+	server               *grpc.Server
+	interceptors         Interceptors
+	restHandlers         []RESTHandler
+	prometheusCollectors []prometheus.Collector
 }
 
 type Interceptors struct {
@@ -54,6 +68,7 @@ func (s *service) Init() {
 	s.initInterceptors()
 	s.initConfigRestServeMuxOpts()
 	s.initGRPCServer()
+	s.initDefaultPrometheusCollectors()
 }
 
 func (s *service) Shutdown(ctx context.Context) error {
@@ -100,6 +115,11 @@ func (s *service) RunServers(ctx context.Context) <-chan error {
 	go waitGroup.Wrap(func() {
 		logger.Infof("Initializing HTTP connection in port %s", s.cfg.restPort)
 		exitFunc(s.ListenAndServeREST(ctx))
+	})
+
+	go waitGroup.Wrap(func() {
+		logger.Infof("Initializing Prometheus connection in port %s", s.cfg.prometheusPort)
+		exitFunc(s.ListenAndServePrometheus(ctx))
 	})
 
 	return exitCh
@@ -156,6 +176,37 @@ func (s *service) ListenAndServeREST(ctx context.Context) error {
 	logger.Infof("starting HTTP server at :%s...", s.cfg.restPort)
 	if err = srv.ListenAndServe(); err != http.ErrServerClosed {
 		logger.Errorf("ListenAndServeREST: failed to listen and serve: %v\n", err)
+		return err
+	}
+
+	return nil
+}
+
+func (s *service) ListenAndServePrometheus(ctx context.Context) (err error) {
+	for _, c := range s.prometheusCollectors {
+		if err = prometheus.Register(c); err != nil {
+			logger.Errorf("ListenAndServePrometheus: failed to register collector: %v\n", err)
+		}
+	}
+
+	mux := http.NewServeMux()
+	srv := &http.Server{
+		Addr:    fmt.Sprintf(":%s", s.cfg.prometheusPort),
+		Handler: muxmiddleware.MuxCORS(mux),
+	}
+
+	mux.Handle("/metrics", promhttp.Handler())
+
+	go func() {
+		<-ctx.Done()
+		if err = srv.Shutdown(context.Background()); err != nil {
+			logger.Errorf("ListenAndServeREST: failed to shutdown %v\n", err)
+		}
+	}()
+
+	logger.Info("starting Prometheus server at :%s...", s.cfg.prometheusPort)
+	if err = srv.ListenAndServe(); err != http.ErrServerClosed {
+		logger.Errorf("ListenAndServePrometheus: failed to listen and serve: %v\n", err)
 		return err
 	}
 

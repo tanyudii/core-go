@@ -3,10 +3,12 @@ package zeus
 import "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 
 const (
-	DefaultGRPCPort   = "9090"
-	DefaultRESTPort   = "8080"
-	DefaultEnableCORS = true
-	DefaultOnlyJSON   = true
+	DefaultGRPCPort         = "9090"
+	DefaultRESTPort         = "8080"
+	DefaultEnableCORS       = true
+	DefaultOnlyJSON         = true
+	DefaultEnablePrometheus = true
+	DefaultPrometheusPort   = "9800"
 )
 
 type Config struct {
@@ -14,6 +16,8 @@ type Config struct {
 	restPort         string
 	enableCORS       bool
 	onlyJSON         bool
+	enablePrometheus bool
+	prometheusPort   string
 	restServeMuxOpts []runtime.ServeMuxOption
 }
 
@@ -21,10 +25,12 @@ type ConfigFunc func(c *Config)
 
 func generateConfig(args ...ConfigFunc) *Config {
 	c := &Config{
-		gRPCPort:   DefaultGRPCPort,
-		restPort:   DefaultRESTPort,
-		enableCORS: DefaultEnableCORS,
-		onlyJSON:   DefaultOnlyJSON,
+		gRPCPort:         DefaultGRPCPort,
+		restPort:         DefaultRESTPort,
+		enableCORS:       DefaultEnableCORS,
+		onlyJSON:         DefaultOnlyJSON,
+		enablePrometheus: DefaultEnablePrometheus,
+		prometheusPort:   DefaultPrometheusPort,
 	}
 	for i := range args {
 		args[i](c)
@@ -53,6 +59,18 @@ func EnableCORS(cors bool) ConfigFunc {
 func OnlyJSON(j bool) ConfigFunc {
 	return func(c *Config) {
 		c.onlyJSON = j
+	}
+}
+
+func EnablePrometheus(p bool) ConfigFunc {
+	return func(c *Config) {
+		c.enablePrometheus = p
+	}
+}
+
+func PrometheusPort(p string) ConfigFunc {
+	return func(c *Config) {
+		c.prometheusPort = p
 	}
 }
 
