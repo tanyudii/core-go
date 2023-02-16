@@ -44,25 +44,6 @@ func (i *BadRequestError) GetHTTPCode() int {
 	return i.httpCode
 }
 
-func (i *BadRequestError) GetFields() ErrorField {
-	return i.fields
-}
-
-func (i *BadRequestError) GetBadRequestFields() *errdetails.BadRequest {
-	errFields := i.GetFields()
-	if len(errFields) == 0 {
-		return nil
-	}
-	br := &errdetails.BadRequest{}
-	for attr, msg := range i.GetFields() {
-		br.FieldViolations = append(br.FieldViolations, &errdetails.BadRequest_FieldViolation{
-			Field:       attr,
-			Description: msg,
-		})
-	}
-	return br
-}
-
 func (i *BadRequestError) GetErrorInfoCustom() *errdetails.ErrorInfo {
 	metaData := make(map[string]string)
 
@@ -100,6 +81,25 @@ func (i *BadRequestError) GRPCStatus() *status.Status {
 	}
 
 	return stats
+}
+
+func (i *BadRequestError) GetFields() ErrorField {
+	return i.fields
+}
+
+func (i *BadRequestError) GetBadRequestFields() *errdetails.BadRequest {
+	errFields := i.GetFields()
+	if len(errFields) == 0 {
+		return nil
+	}
+	br := &errdetails.BadRequest{}
+	for attr, msg := range i.GetFields() {
+		br.FieldViolations = append(br.FieldViolations, &errdetails.BadRequest_FieldViolation{
+			Field:       attr,
+			Description: msg,
+		})
+	}
+	return br
 }
 
 func NewBadRequestError(msg string) error {

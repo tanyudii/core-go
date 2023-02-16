@@ -2,7 +2,6 @@ package zeuql
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/gin-gonic/gin"
@@ -21,9 +20,7 @@ import (
 )
 
 type Service interface {
-	Init()
 	Shutdown(ctx context.Context) error
-	GetEngine() *gin.Engine
 	RunGracefully(t int)
 	RunServers(ctx context.Context) <-chan error
 	RegisterExecutableSchema(schema graphql.ExecutableSchema)
@@ -31,7 +28,6 @@ type Service interface {
 
 type service struct {
 	cfg                  *Config
-	engine               *gin.Engine
 	schema               graphql.ExecutableSchema
 	prometheusCollectors []prometheus.Collector
 }
@@ -42,17 +38,9 @@ func NewService(args ...ConfigFunc) Service {
 	}
 }
 
-func (s *service) Init() {
-	s.initEngine()
-}
-
 func (s *service) Shutdown(ctx context.Context) error {
 	<-ctx.Done()
 	return nil
-}
-
-func (s *service) GetEngine() *gin.Engine {
-	return s.engine
 }
 
 func (s *service) RunGracefully(t int) {
@@ -100,24 +88,23 @@ func (s *service) RunServers(ctx context.Context) <-chan error {
 }
 
 func (s *service) ListenAndServeGraphQL(ctx context.Context) (err error) {
-	if s.engine == nil {
-		return errors.New("ListenAndServeGraphQL: engine is not initialized")
-	}
+	gin.SetMode(gin.ReleaseMode)
+	r := gin.New()
 
 	srv := &http.Server{
 		Addr:    ":" + s.cfg.graphQLPort,
-		Handler: s.engine,
+		Handler: r,
 	}
 
 	//register CORS when config enabled
 	if s.cfg.enableCORS {
-		s.engine.Use(ginmiddleware.GinCORS())
+		r.Use(ginmiddleware.GinCORS())
 	}
 
-	s.initHealthCheck()
+	s.initHealthCheck(r)
 
-	s.engine.POST("/query", s.graphQLHandler())
-	s.engine.GET("/", s.playgroundHandler())
+	r.POST("/query", s.graphQLHandler())
+	r.GET("/", s.playgroundHandler())
 
 	go func() {
 		<-ctx.Done()
