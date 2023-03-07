@@ -24,12 +24,14 @@ type Service interface {
 	RunGracefully(t int)
 	RunServers(ctx context.Context) <-chan error
 	RegisterExecutableSchema(schema graphql.ExecutableSchema)
+	RegisterMiddleware(m gin.HandlerFunc)
 }
 
 type service struct {
 	cfg                  *Config
 	schema               graphql.ExecutableSchema
 	prometheusCollectors []prometheus.Collector
+	middleware           []gin.HandlerFunc
 }
 
 func NewService(args ...ConfigFunc) Service {
@@ -101,6 +103,10 @@ func (s *service) ListenAndServeGraphQL(ctx context.Context) (err error) {
 		r.Use(ginmiddleware.GinCORS())
 	}
 
+	for _, m := range s.middleware {
+		r.Use(m)
+	}
+
 	s.initHealthCheck(r)
 
 	r.POST("/query", s.graphQLHandler())
@@ -155,4 +161,8 @@ func (s *service) ListenAndServePrometheus(ctx context.Context) (err error) {
 
 func (s *service) RegisterExecutableSchema(schema graphql.ExecutableSchema) {
 	s.schema = schema
+}
+
+func (s *service) RegisterMiddleware(m gin.HandlerFunc) {
+	s.middleware = append(s.middleware, m)
 }
