@@ -39,3 +39,11 @@ func (p *Pagination) SetPagination() {
 	}
 	p.TotalPage = int32(math.Ceil(float64(p.Total) / float64(p.Limit)))
 }
+
+func (p *Pagination) GetOffset() int32 {
+	var offset int32
+	if p.Page > 0 {
+		offset = p.Limit * (p.Page - 1)
+	}
+	return offset
+}
