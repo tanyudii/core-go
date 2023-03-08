@@ -112,7 +112,7 @@ func (s *service) ListenAndServeGraphQL(ctx context.Context) (err error) {
 	r.POST("/query", s.graphQLHandler())
 
 	if s.cfg.enablePlayground {
-		r.GET("/", s.playgroundHandler())
+		r.GET("/playground", s.playgroundHandler())
 	}
 
 	go func() {
