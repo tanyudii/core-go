@@ -2,6 +2,7 @@ package zeuql
 
 const (
 	DefaultGraphQLPort      = "8080"
+	DefaultEnablePlayground = true
 	DefaultEnableCORS       = true
 	DefaultEnablePrometheus = true
 	DefaultPrometheusPort   = "9800"
@@ -10,6 +11,7 @@ const (
 type Config struct {
 	graphQLPort      string
 	enableCORS       bool
+	enablePlayground bool
 	enablePrometheus bool
 	prometheusPort   string
 }
@@ -19,6 +21,7 @@ type ConfigFunc func(c *Config)
 func generateConfig(args ...ConfigFunc) *Config {
 	c := &Config{
 		graphQLPort:      DefaultGraphQLPort,
+		enablePlayground: DefaultEnablePlayground,
 		enableCORS:       DefaultEnableCORS,
 		enablePrometheus: DefaultEnablePrometheus,
 		prometheusPort:   DefaultPrometheusPort,
@@ -35,15 +38,21 @@ func GraphQLPort(p string) ConfigFunc {
 	}
 }
 
-func EnableCORS(cors bool) ConfigFunc {
+func EnablePlayground(e bool) ConfigFunc {
 	return func(c *Config) {
-		c.enableCORS = cors
+		c.enablePlayground = e
 	}
 }
 
-func EnablePrometheus(p bool) ConfigFunc {
+func EnableCORS(e bool) ConfigFunc {
 	return func(c *Config) {
-		c.enablePrometheus = p
+		c.enableCORS = e
+	}
+}
+
+func EnablePrometheus(e bool) ConfigFunc {
+	return func(c *Config) {
+		c.enablePrometheus = e
 	}
 }
 

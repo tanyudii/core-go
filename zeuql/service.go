@@ -110,7 +110,10 @@ func (s *service) ListenAndServeGraphQL(ctx context.Context) (err error) {
 	s.initHealthCheck(r)
 
 	r.POST("/query", s.graphQLHandler())
-	r.GET("/", s.playgroundHandler())
+
+	if s.cfg.enablePlayground {
+		r.GET("/", s.playgroundHandler())
+	}
 
 	go func() {
 		<-ctx.Done()
