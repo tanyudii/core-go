@@ -93,6 +93,20 @@ func (c *EContext) IsInternal() bool {
 		c.CompanyID != "" && c.CompanySerial != ""
 }
 
+func (c *EContext) HasPermission(codes []string) bool {
+	mapCode := make(map[string]bool)
+	for _, code := range codes {
+		mapCode[code] = true
+	}
+	permissions := strings.Split(c.Permissions, ",")
+	for _, p := range permissions {
+		if mapCode[p] {
+			return true
+		}
+	}
+	return false
+}
+
 func NewContext(ctx context.Context, eCtx *EContext) context.Context {
 	if eCtx == nil {
 		return ctx

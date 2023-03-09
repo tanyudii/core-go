@@ -2,7 +2,6 @@ package ectx
 
 import (
 	"context"
-
 	"google.golang.org/grpc/metadata"
 )
 

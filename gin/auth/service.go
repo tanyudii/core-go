@@ -3,9 +3,10 @@ package auth
 import (
 	"context"
 	"errors"
+	"fmt"
+	"github.com/gin-gonic/gin"
 	"github.com/tanyudii/core-go/ectx"
 	"github.com/tanyudii/core-go/errutil"
-	"google.golang.org/grpc"
 	"strings"
 )
 
@@ -24,19 +25,22 @@ func newService(
 	}
 }
 
-func (s *service) authenticate(ctx context.Context, info *grpc.UnaryServerInfo) (context.Context, error) {
+func (s *service) authenticate(c *gin.Context) (context.Context, error) {
+	fullMethod := fmt.Sprintf("[%s] %s", c.Request.Method, c.Request.RequestURI)
+
 	//skip when route is public routes
-	if s.cfg.mapPublicRoutes[info.FullMethod] {
-		return ctx, nil
+	if s.cfg.mapPublicRoutes[fullMethod] {
+		return nil, nil
 	}
 
-	if newCtx, ok := s.authorizedInternalCall(ctx); ok {
-		return newCtx, nil
-	}
-
-	newCtx, err := s.authenticateGRPC(ctx)
+	newCtx, err := s.authenticateGin(c)
 	if err != nil {
 		return nil, err
+	}
+
+	//skip if graphql mode and request is not contain authorization
+	if s.cfg.graphqlMode && newCtx == nil {
+		return nil, nil
 	}
 
 	session, err := ectx.FromContextWithErr(newCtx)
@@ -45,46 +49,55 @@ func (s *service) authenticate(ctx context.Context, info *grpc.UnaryServerInfo) 
 	}
 
 	//if user authorized with type, will be skip other middleware
-	if s.authorizedUserType(session, info) {
-		return newCtx, nil
+	if s.authorizedUserType(session, fullMethod) {
+		return nil, nil
 	}
 
-	if err = s.authorizedPermission(session, info); err != nil {
+	if err = s.authorizedPermission(session, fullMethod); err != nil {
 		return nil, errutil.NewUnauthorizedError(err.Error())
 	}
 
-	if err = s.authorizedScope(session, info); err != nil {
+	if err = s.authorizedScope(session, fullMethod); err != nil {
 		return nil, errutil.NewUnauthorizedError(err.Error())
 	}
 
 	return newCtx, nil
 }
 
-func (s *service) authenticateGRPC(ctx context.Context) (context.Context, error) {
-	md := ectx.FromIncoming(ctx)
-	jwtToken := md.Get("authorization")
-	if jwtToken == "" {
+func (s *service) authenticateGin(c *gin.Context) (context.Context, error) {
+	jwtToken := c.GetHeader("Authorization")
+	if !s.cfg.graphqlMode && jwtToken == "" {
 		return nil, errutil.ErrAuthUnauthenticated
 	}
 
-	if err := s.authenticateToken(&md, jwtToken); err != nil {
+	newCtx, err := s.authenticateToken(c, jwtToken)
+	if err != nil {
 		return nil, err
 	}
 
-	reqCtx := ectx.NewEContext(md)
-	return md.ToIncoming(ectx.NewContext(ctx, reqCtx)), nil
+	//skip if graphql mode and request is not contain authorization
+	if s.cfg.graphqlMode && newCtx == nil {
+		return nil, nil
+	}
+
+	return newCtx, nil
 }
 
-func (s *service) authenticateToken(md *ectx.ContextMD, authorization string) error {
+func (s *service) authenticateToken(c *gin.Context, authorization string) (context.Context, error) {
 	splitToken := strings.Split(authorization, "Bearer ")
 	if len(splitToken) != 2 {
-		return errutil.ErrAuthUnauthenticated
+		if s.cfg.graphqlMode {
+			return nil, nil
+		}
+		return nil, errutil.ErrAuthUnauthenticated
 	}
 
 	respTokenInfo, err := s.tokenService.TokenInfo(context.Background(), splitToken[1])
 	if err != nil {
-		return err
+		return nil, err
 	}
+
+	md := ectx.ContextMD{}
 
 	tokenInfo := respTokenInfo.TokenInfo
 	if tokenInfo != nil {
@@ -107,10 +120,12 @@ func (s *service) authenticateToken(md *ectx.ContextMD, authorization string) er
 
 	md.Set(strings.ToLower(ectx.RequestHeaderKeyScopes), respTokenInfo.Scope)
 
-	return nil
+	reqCtx := ectx.NewEContext(md)
+	return ectx.NewContext(c.Request.Context(), reqCtx), nil
+
 }
 
-func (s *service) authorizedUserType(session *ectx.EContext, info *grpc.UnaryServerInfo) bool {
+func (s *service) authorizedUserType(session *ectx.EContext, fullMethod string) bool {
 	userType := session.UserType
 	if userType == "" {
 		return false
@@ -124,7 +139,7 @@ func (s *service) authorizedUserType(session *ectx.EContext, info *grpc.UnarySer
 	}
 
 	//skip immediately when route not configured or user type empty
-	routeUserTypes, ok := s.cfg.mapUserTypeRoutes[info.FullMethod]
+	routeUserTypes, ok := s.cfg.mapUserTypeRoutes[fullMethod]
 	if !ok {
 		return false
 	}
@@ -138,9 +153,9 @@ func (s *service) authorizedUserType(session *ectx.EContext, info *grpc.UnarySer
 	return false
 }
 
-func (s *service) authorizedPermission(session *ectx.EContext, info *grpc.UnaryServerInfo) error {
+func (s *service) authorizedPermission(session *ectx.EContext, fullMethod string) error {
 	//skip immediately when route not configured
-	routePermissions, ok := s.cfg.mapPermissionRoutes[info.FullMethod]
+	routePermissions, ok := s.cfg.mapPermissionRoutes[fullMethod]
 	if !ok {
 		return nil
 	}
@@ -165,16 +180,16 @@ func (s *service) authorizedPermission(session *ectx.EContext, info *grpc.UnaryS
 	return errutil.ErrAuthPermissionNotAllowed
 }
 
-func (s *service) authorizedScope(session *ectx.EContext, info *grpc.UnaryServerInfo) error {
+func (s *service) authorizedScope(session *ectx.EContext, fullMethod string) error {
 	//skip immediately when route not configured
-	routeScopes, ok := s.cfg.mapScopeRoutes[info.FullMethod]
+	routeScopes, ok := s.cfg.mapScopeRoutes[fullMethod]
 	if !ok {
 		return nil
 	}
 
 	stringScopes := session.Scopes
 	if stringScopes == "" {
-		return errutil.ErrAuthScopeNotConfigured
+		return errors.New("user scope is not configured")
 	}
 
 	scopes := strings.Split(stringScopes, ",")
@@ -192,8 +207,10 @@ func (s *service) authorizedScope(session *ectx.EContext, info *grpc.UnaryServer
 	return errutil.ErrAuthScopeNotAllowed
 }
 
-func (s *service) authorizedInternalCall(ctx context.Context) (context.Context, bool) {
-	md := ectx.FromIncoming(ctx)
-	reqCtx := ectx.NewEContext(md)
-	return md.ToIncoming(ectx.NewContext(ctx, reqCtx)), reqCtx.IsInternal()
+func (s *service) authorizedInternalCall(ctx context.Context) bool {
+	eCtx, ok := ectx.FromContext(ctx)
+	if !ok {
+		return false
+	}
+	return eCtx.IsInternal()
 }
