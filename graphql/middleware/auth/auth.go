@@ -18,7 +18,13 @@ func HasPermission(ctx context.Context, codes []string) error {
 	if !ok {
 		return errutil.ErrAuthPermissionNotAllowed
 	}
-	return eCtx.HasPermission(codes)
+	ok, err := eCtx.HasPermission(codes)
+	if err != nil {
+		return err
+	} else if ok {
+		return nil
+	}
+	return errutil.ErrAuthPermissionNotAllowed
 }
 
 func HasScope(ctx context.Context, codes []string) error {
@@ -26,7 +32,13 @@ func HasScope(ctx context.Context, codes []string) error {
 	if !ok {
 		return errutil.ErrAuthScopeNotAllowed
 	}
-	return eCtx.HasScope(codes)
+	ok, err := eCtx.HasScope(codes)
+	if err != nil {
+		return err
+	} else if ok {
+		return nil
+	}
+	return errutil.ErrAuthScopeNotAllowed
 }
 
 func HasUserType(ctx context.Context, codes []string) error {
@@ -34,5 +46,11 @@ func HasUserType(ctx context.Context, codes []string) error {
 	if !ok {
 		return errutil.ErrAuthUserTypeNotAllowed
 	}
-	return eCtx.HasUserType(codes)
+	ok, err := eCtx.HasUserType(codes)
+	if err != nil {
+		return err
+	} else if ok {
+		return nil
+	}
+	return errutil.ErrAuthUserTypeNotAllowed
 }

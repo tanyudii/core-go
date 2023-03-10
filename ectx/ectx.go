@@ -3,6 +3,7 @@ package ectx
 import (
 	"context"
 	"errors"
+	"github.com/tanyudii/core-go/common"
 	"github.com/tanyudii/core-go/errutil"
 	"strconv"
 	"strings"
@@ -94,60 +95,68 @@ func (c *EContext) IsInternal() bool {
 		c.CompanyID != "" && c.CompanySerial != ""
 }
 
-func (c *EContext) HasPermission(codes []string) error {
-	permissions := strings.Split(c.Permissions, ",")
-	if len(permissions) == 0 && len(codes) == 0 {
-		return nil
+func (c *EContext) HasPermission(codes []string) (bool, error) {
+	//skip immediately
+	if len(codes) == 0 {
+		return false, nil
 	}
-	mapCode := make(map[string]bool)
-	for _, code := range codes {
-		mapCode[code] = true
-	}
-	for _, p := range permissions {
-		if mapCode[p] {
-			return nil
+	permissions := common.ParseStringToSliceBySeparator(c.Permissions, ",")
+	if len(permissions) != 0 {
+		mapCode := make(map[string]bool)
+		for _, code := range codes {
+			mapCode[code] = true
+		}
+		for _, p := range permissions {
+			if mapCode[p] {
+				return true, nil
+			}
 		}
 	}
-	return errutil.ErrAuthPermissionNotAllowed
+	return false, errutil.ErrAuthPermissionNotAllowed
 }
 
-func (c *EContext) HasScope(codes []string) error {
-	scopes := strings.Split(c.Scopes, ",")
-	if len(scopes) == 0 && len(codes) == 0 {
-		return nil
+func (c *EContext) HasScope(codes []string) (bool, error) {
+	//skip immediately
+	if len(codes) == 0 {
+		return false, nil
 	}
-	mapCode := make(map[string]bool)
-	for _, code := range codes {
-		mapCode[code] = true
-	}
-	for _, s := range scopes {
-		if mapCode[s] {
-			return nil
+	scopes := common.ParseStringToSliceBySeparator(c.Scopes, ",")
+	if len(scopes) != 0 {
+		mapCode := make(map[string]bool)
+		for _, code := range codes {
+			mapCode[code] = true
+		}
+		for _, s := range scopes {
+			if mapCode[s] {
+				return true, nil
+			}
 		}
 	}
-	return errutil.ErrAuthScopeNotAllowed
+	return false, errutil.ErrAuthScopeNotAllowed
 }
 
-func (c *EContext) HasUserType(codes []string) error {
-	if c.UserType == "" && len(codes) == 0 {
-		return nil
+func (c *EContext) HasUserType(codes []string) (bool, error) {
+	//skip immediately
+	if len(codes) == 0 {
+		return false, nil
 	}
 	for _, code := range codes {
 		if code == c.UserType {
-			return nil
+			return true, nil
 		}
 	}
-	return errutil.ErrAuthUserTypeNotAllowed
+	return false, errutil.ErrAuthUserTypeNotAllowed
 }
 
-func (c *EContext) HasUserTypeByMapCode(codes map[string]bool) error {
-	if c.UserType == "" && len(codes) == 0 {
-		return nil
+func (c *EContext) HasUserTypeByMapCode(codes map[string]bool) (bool, error) {
+	//skip immediately
+	if len(codes) == 0 {
+		return false, nil
 	}
-	if codes[c.UserType] {
-		return nil
+	if c.UserType != "" && codes[c.UserType] {
+		return true, nil
 	}
-	return errutil.ErrAuthUserTypeNotAllowed
+	return false, errutil.ErrAuthUserTypeNotAllowed
 }
 
 func NewContext(ctx context.Context, eCtx *EContext) context.Context {

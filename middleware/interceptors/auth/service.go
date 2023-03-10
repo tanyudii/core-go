@@ -44,7 +44,10 @@ func (s *service) authenticate(ctx context.Context, info *grpc.UnaryServerInfo) 
 	}
 
 	//if user authorized with type, will be skip other middleware
-	if s.authorizedUserType(session, info) {
+	ok, err := s.authorizedUserType(session, info)
+	if err != nil {
+		return nil, err
+	} else if ok {
 		return newCtx, nil
 	}
 
@@ -102,23 +105,25 @@ func (s *service) authenticateToken(ctx context.Context) (context.Context, error
 	return md.ToIncoming(ectx.NewContext(ctx, reqCtx)), nil
 }
 
-func (s *service) authorizedUserType(session *ectx.EContext, info *grpc.UnaryServerInfo) bool {
+func (s *service) authorizedUserType(session *ectx.EContext, info *grpc.UnaryServerInfo) (bool, error) {
 	//if trusted user type continue to process request
-	if err := session.HasUserTypeByMapCode(s.cfg.mapUserTypeTrusted); err == nil {
-		return true
+	ok, err := session.HasUserTypeByMapCode(s.cfg.mapUserTypeTrusted)
+	if err != nil {
+		return false, err
+	} else if ok {
+		return ok, nil
 	}
-	if err := session.HasUserType(s.cfg.mapUserTypeRoutes[info.FullMethod]); err == nil {
-		return true
-	}
-	return false
+	return session.HasUserType(s.cfg.mapUserTypeRoutes[info.FullMethod])
 }
 
 func (s *service) authorizedPermission(session *ectx.EContext, info *grpc.UnaryServerInfo) error {
-	return session.HasPermission(s.cfg.mapPermissionRoutes[info.FullMethod])
+	_, err := session.HasPermission(s.cfg.mapPermissionRoutes[info.FullMethod])
+	return err
 }
 
 func (s *service) authorizedScope(session *ectx.EContext, info *grpc.UnaryServerInfo) error {
-	return session.HasScope(s.cfg.mapScopeRoutes[info.FullMethod])
+	_, err := session.HasScope(s.cfg.mapScopeRoutes[info.FullMethod])
+	return err
 }
 
 func (s *service) authorizedInternalCall(ctx context.Context) (context.Context, bool) {

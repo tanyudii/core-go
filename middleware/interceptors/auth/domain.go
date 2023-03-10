@@ -14,7 +14,7 @@ type (
 	Service interface {
 		authenticate(ctx context.Context, info *grpc.UnaryServerInfo) (context.Context, error)
 		authenticateToken(ctx context.Context) (context.Context, error)
-		authorizedUserType(session *ectx.EContext, info *grpc.UnaryServerInfo) bool
+		authorizedUserType(session *ectx.EContext, info *grpc.UnaryServerInfo) (bool, error)
 		authorizedPermission(session *ectx.EContext, info *grpc.UnaryServerInfo) error
 		authorizedScope(session *ectx.EContext, info *grpc.UnaryServerInfo) error
 		authorizedInternalCall(ctx context.Context) (context.Context, bool)
