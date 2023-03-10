@@ -3,6 +3,7 @@ package ectx
 import (
 	"context"
 	"errors"
+	"github.com/tanyudii/core-go/errutil"
 	"strconv"
 	"strings"
 )
@@ -93,18 +94,60 @@ func (c *EContext) IsInternal() bool {
 		c.CompanyID != "" && c.CompanySerial != ""
 }
 
-func (c *EContext) HasPermission(codes []string) bool {
+func (c *EContext) HasPermission(codes []string) error {
+	permissions := strings.Split(c.Permissions, ",")
+	if len(permissions) == 0 && len(codes) == 0 {
+		return nil
+	}
 	mapCode := make(map[string]bool)
 	for _, code := range codes {
 		mapCode[code] = true
 	}
-	permissions := strings.Split(c.Permissions, ",")
 	for _, p := range permissions {
 		if mapCode[p] {
-			return true
+			return nil
 		}
 	}
-	return false
+	return errutil.ErrAuthPermissionNotAllowed
+}
+
+func (c *EContext) HasScope(codes []string) error {
+	scopes := strings.Split(c.Scopes, ",")
+	if len(scopes) == 0 && len(codes) == 0 {
+		return nil
+	}
+	mapCode := make(map[string]bool)
+	for _, code := range codes {
+		mapCode[code] = true
+	}
+	for _, s := range scopes {
+		if mapCode[s] {
+			return nil
+		}
+	}
+	return errutil.ErrAuthScopeNotAllowed
+}
+
+func (c *EContext) HasUserType(codes []string) error {
+	if c.UserType == "" && len(codes) == 0 {
+		return nil
+	}
+	for _, code := range codes {
+		if code == c.UserType {
+			return nil
+		}
+	}
+	return errutil.ErrAuthUserTypeNotAllowed
+}
+
+func (c *EContext) HasUserTypeByMapCode(codes map[string]bool) error {
+	if c.UserType == "" && len(codes) == 0 {
+		return nil
+	}
+	if codes[c.UserType] {
+		return nil
+	}
+	return errutil.ErrAuthUserTypeNotAllowed
 }
 
 func NewContext(ctx context.Context, eCtx *EContext) context.Context {

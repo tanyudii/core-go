@@ -2,7 +2,6 @@ package auth
 
 import (
 	"context"
-	"errors"
 	"github.com/tanyudii/core-go/ectx"
 	"github.com/tanyudii/core-go/errutil"
 	"google.golang.org/grpc"
@@ -34,7 +33,7 @@ func (s *service) authenticate(ctx context.Context, info *grpc.UnaryServerInfo) 
 		return newCtx, nil
 	}
 
-	newCtx, err := s.authenticateGRPC(ctx)
+	newCtx, err := s.authenticateToken(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -60,31 +59,25 @@ func (s *service) authenticate(ctx context.Context, info *grpc.UnaryServerInfo) 
 	return newCtx, nil
 }
 
-func (s *service) authenticateGRPC(ctx context.Context) (context.Context, error) {
+func (s *service) authenticateToken(ctx context.Context) (context.Context, error) {
 	md := ectx.FromIncoming(ctx)
-	jwtToken := md.Get("authorization")
-	if jwtToken == "" {
+	token := md.Get(strings.ToLower(ectx.RequestHeaderKeyAuthorization))
+	if token == "" {
 		return nil, errutil.ErrAuthUnauthenticated
 	}
 
-	if err := s.authenticateToken(&md, jwtToken); err != nil {
-		return nil, err
-	}
-
-	reqCtx := ectx.NewEContext(md)
-	return md.ToIncoming(ectx.NewContext(ctx, reqCtx)), nil
-}
-
-func (s *service) authenticateToken(md *ectx.ContextMD, authorization string) error {
-	splitToken := strings.Split(authorization, "Bearer ")
+	splitToken := strings.Split(token, "Bearer ")
 	if len(splitToken) != 2 {
-		return errutil.ErrAuthUnauthenticated
+		return nil, errutil.ErrAuthUnauthenticated
 	}
 
 	respTokenInfo, err := s.tokenService.TokenInfo(context.Background(), splitToken[1])
 	if err != nil {
-		return err
+		return nil, err
 	}
+
+	md.Set(strings.ToLower(ectx.RequestHeaderKeyScopes), respTokenInfo.Scope)
+	md.Set(strings.ToLower(ectx.RequestHeaderKeyAuthorization), token)
 
 	tokenInfo := respTokenInfo.TokenInfo
 	if tokenInfo != nil {
@@ -105,91 +98,27 @@ func (s *service) authenticateToken(md *ectx.ContextMD, authorization string) er
 		md.Set(strings.ToLower(ectx.RequestHeaderKeyClientName), clientInfo.ClientName)
 	}
 
-	md.Set(strings.ToLower(ectx.RequestHeaderKeyScopes), respTokenInfo.Scope)
-
-	return nil
+	reqCtx := ectx.NewEContext(md)
+	return md.ToIncoming(ectx.NewContext(ctx, reqCtx)), nil
 }
 
 func (s *service) authorizedUserType(session *ectx.EContext, info *grpc.UnaryServerInfo) bool {
-	userType := session.UserType
-	if userType == "" {
-		return false
-	}
-
 	//if trusted user type continue to process request
-	for ut := range s.cfg.mapUserTypeTrusted {
-		if strings.ToLower(ut) == strings.ToLower(userType) {
-			return true
-		}
+	if err := session.HasUserTypeByMapCode(s.cfg.mapUserTypeTrusted); err == nil {
+		return true
 	}
-
-	//skip immediately when route not configured or user type empty
-	routeUserTypes, ok := s.cfg.mapUserTypeRoutes[info.FullMethod]
-	if !ok {
-		return false
+	if err := session.HasUserType(s.cfg.mapUserTypeRoutes[info.FullMethod]); err == nil {
+		return true
 	}
-
-	for _, ut := range routeUserTypes {
-		if strings.ToLower(ut) == strings.ToLower(userType) {
-			return true
-		}
-	}
-
 	return false
 }
 
 func (s *service) authorizedPermission(session *ectx.EContext, info *grpc.UnaryServerInfo) error {
-	//skip immediately when route not configured
-	routePermissions, ok := s.cfg.mapPermissionRoutes[info.FullMethod]
-	if !ok {
-		return nil
-	}
-
-	stringPermissions := session.Permissions
-	if stringPermissions == "" {
-		return errors.New("user permission is not configured")
-	}
-
-	permissions := strings.Split(stringPermissions, ",")
-	mapPermission := map[string]bool{}
-	for _, p := range permissions {
-		mapPermission[p] = true
-	}
-
-	for _, rp := range routePermissions {
-		if mapPermission[rp] {
-			return nil
-		}
-	}
-
-	return errutil.ErrAuthPermissionNotAllowed
+	return session.HasPermission(s.cfg.mapPermissionRoutes[info.FullMethod])
 }
 
 func (s *service) authorizedScope(session *ectx.EContext, info *grpc.UnaryServerInfo) error {
-	//skip immediately when route not configured
-	routeScopes, ok := s.cfg.mapScopeRoutes[info.FullMethod]
-	if !ok {
-		return nil
-	}
-
-	stringScopes := session.Scopes
-	if stringScopes == "" {
-		return errutil.ErrAuthScopeNotConfigured
-	}
-
-	scopes := strings.Split(stringScopes, ",")
-	mapScope := map[string]bool{}
-	for _, p := range scopes {
-		mapScope[p] = true
-	}
-
-	for _, rp := range routeScopes {
-		if mapScope[rp] {
-			return nil
-		}
-	}
-
-	return errutil.ErrAuthScopeNotAllowed
+	return session.HasScope(s.cfg.mapScopeRoutes[info.FullMethod])
 }
 
 func (s *service) authorizedInternalCall(ctx context.Context) (context.Context, bool) {

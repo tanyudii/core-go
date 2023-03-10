@@ -33,14 +33,13 @@ func (s *service) authenticate(c *gin.Context) (context.Context, error) {
 		return nil, nil
 	}
 
-	newCtx, err := s.authenticateGin(c)
+	newCtx, err := s.authenticateToken(c)
 	if err != nil {
+		//skip if graphql mode and error is unauthenticated
+		if s.cfg.graphqlMode && errors.Is(err, errutil.ErrAuthUnauthenticated) {
+			return nil, nil
+		}
 		return nil, err
-	}
-
-	//skip if graphql mode and request is not contain authorization
-	if s.cfg.graphqlMode && newCtx == nil {
-		return nil, nil
 	}
 
 	session, err := ectx.FromContextWithErr(newCtx)
@@ -64,31 +63,14 @@ func (s *service) authenticate(c *gin.Context) (context.Context, error) {
 	return newCtx, nil
 }
 
-func (s *service) authenticateGin(c *gin.Context) (context.Context, error) {
-	jwtToken := c.GetHeader("Authorization")
-	if !s.cfg.graphqlMode && jwtToken == "" {
+func (s *service) authenticateToken(c *gin.Context) (context.Context, error) {
+	token := c.GetHeader("Authorization")
+	if token == "" {
 		return nil, errutil.ErrAuthUnauthenticated
 	}
 
-	newCtx, err := s.authenticateToken(c, jwtToken)
-	if err != nil {
-		return nil, err
-	}
-
-	//skip if graphql mode and request is not contain authorization
-	if s.cfg.graphqlMode && newCtx == nil {
-		return nil, nil
-	}
-
-	return newCtx, nil
-}
-
-func (s *service) authenticateToken(c *gin.Context, authorization string) (context.Context, error) {
-	splitToken := strings.Split(authorization, "Bearer ")
+	splitToken := strings.Split(token, "Bearer ")
 	if len(splitToken) != 2 {
-		if s.cfg.graphqlMode {
-			return nil, nil
-		}
 		return nil, errutil.ErrAuthUnauthenticated
 	}
 
@@ -98,6 +80,8 @@ func (s *service) authenticateToken(c *gin.Context, authorization string) (conte
 	}
 
 	md := ectx.ContextMD{}
+	md.Set(strings.ToLower(ectx.RequestHeaderKeyScopes), respTokenInfo.Scope)
+	md.Set(strings.ToLower(ectx.RequestHeaderKeyAuthorization), token)
 
 	tokenInfo := respTokenInfo.TokenInfo
 	if tokenInfo != nil {
@@ -118,93 +102,28 @@ func (s *service) authenticateToken(c *gin.Context, authorization string) (conte
 		md.Set(strings.ToLower(ectx.RequestHeaderKeyClientName), clientInfo.ClientName)
 	}
 
-	md.Set(strings.ToLower(ectx.RequestHeaderKeyScopes), respTokenInfo.Scope)
-
 	reqCtx := ectx.NewEContext(md)
 	return ectx.NewContext(c.Request.Context(), reqCtx), nil
 
 }
 
 func (s *service) authorizedUserType(session *ectx.EContext, fullMethod string) bool {
-	userType := session.UserType
-	if userType == "" {
-		return false
-	}
-
 	//if trusted user type continue to process request
-	for ut := range s.cfg.mapUserTypeTrusted {
-		if strings.ToLower(ut) == strings.ToLower(userType) {
-			return true
-		}
+	if err := session.HasUserTypeByMapCode(s.cfg.mapUserTypeTrusted); err == nil {
+		return true
 	}
-
-	//skip immediately when route not configured or user type empty
-	routeUserTypes, ok := s.cfg.mapUserTypeRoutes[fullMethod]
-	if !ok {
-		return false
+	if err := session.HasUserType(s.cfg.mapUserTypeRoutes[fullMethod]); err == nil {
+		return true
 	}
-
-	for _, ut := range routeUserTypes {
-		if strings.ToLower(ut) == strings.ToLower(userType) {
-			return true
-		}
-	}
-
 	return false
 }
 
 func (s *service) authorizedPermission(session *ectx.EContext, fullMethod string) error {
-	//skip immediately when route not configured
-	routePermissions, ok := s.cfg.mapPermissionRoutes[fullMethod]
-	if !ok {
-		return nil
-	}
-
-	stringPermissions := session.Permissions
-	if stringPermissions == "" {
-		return errors.New("user permission is not configured")
-	}
-
-	permissions := strings.Split(stringPermissions, ",")
-	mapPermission := map[string]bool{}
-	for _, p := range permissions {
-		mapPermission[p] = true
-	}
-
-	for _, rp := range routePermissions {
-		if mapPermission[rp] {
-			return nil
-		}
-	}
-
-	return errutil.ErrAuthPermissionNotAllowed
+	return session.HasPermission(s.cfg.mapPermissionRoutes[fullMethod])
 }
 
 func (s *service) authorizedScope(session *ectx.EContext, fullMethod string) error {
-	//skip immediately when route not configured
-	routeScopes, ok := s.cfg.mapScopeRoutes[fullMethod]
-	if !ok {
-		return nil
-	}
-
-	stringScopes := session.Scopes
-	if stringScopes == "" {
-		return errors.New("user scope is not configured")
-	}
-
-	scopes := strings.Split(stringScopes, ",")
-	mapScope := map[string]bool{}
-	for _, p := range scopes {
-		mapScope[p] = true
-	}
-
-	for _, rp := range routeScopes {
-		if mapScope[rp] {
-			return nil
-		}
-	}
-
-	return errutil.ErrAuthScopeNotAllowed
+	return session.HasScope(s.cfg.mapScopeRoutes[fullMethod])
 }
 
 func (s *service) authorizedInternalCall(ctx context.Context) bool {
