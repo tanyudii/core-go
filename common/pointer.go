@@ -7,11 +7,10 @@ func PointerVal[T any](val T) *T {
 }
 
 func SafetyEmptyAsNil[T any](val T) *T {
-	var zero T
 	if reflect.ValueOf(&val).Elem().IsZero() {
 		return nil
 	}
-	return &zero
+	return &val
 }
 
 func SafetyPointerVal[T any](val *T) T {
