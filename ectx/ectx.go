@@ -3,6 +3,8 @@ package ectx
 import (
 	"context"
 	"errors"
+	"github.com/tanyudii/core-go/common"
+	"github.com/tanyudii/core-go/errutil"
 	"strconv"
 	"strings"
 )
@@ -93,18 +95,68 @@ func (c *EContext) IsInternal() bool {
 		c.CompanyID != "" && c.CompanySerial != ""
 }
 
-func (c *EContext) HasPermission(codes []string) bool {
-	mapCode := make(map[string]bool)
-	for _, code := range codes {
-		mapCode[code] = true
+func (c *EContext) HasPermission(codes []string) (bool, error) {
+	//skip immediately
+	if len(codes) == 0 {
+		return false, nil
 	}
-	permissions := strings.Split(c.Permissions, ",")
-	for _, p := range permissions {
-		if mapCode[p] {
-			return true
+	permissions := common.ParseStringToSliceBySeparator(c.Permissions, ",")
+	if len(permissions) != 0 {
+		mapCode := make(map[string]bool)
+		for _, code := range codes {
+			mapCode[code] = true
+		}
+		for _, p := range permissions {
+			if mapCode[p] {
+				return true, nil
+			}
 		}
 	}
-	return false
+	return false, errutil.ErrAuthPermissionNotAllowed
+}
+
+func (c *EContext) HasScope(codes []string) (bool, error) {
+	//skip immediately
+	if len(codes) == 0 {
+		return false, nil
+	}
+	scopes := common.ParseStringToSliceBySeparator(c.Scopes, ",")
+	if len(scopes) != 0 {
+		mapCode := make(map[string]bool)
+		for _, code := range codes {
+			mapCode[code] = true
+		}
+		for _, s := range scopes {
+			if mapCode[s] {
+				return true, nil
+			}
+		}
+	}
+	return false, errutil.ErrAuthScopeNotAllowed
+}
+
+func (c *EContext) HasUserType(codes []string) (bool, error) {
+	//skip immediately
+	if len(codes) == 0 {
+		return false, nil
+	}
+	for _, code := range codes {
+		if code == c.UserType {
+			return true, nil
+		}
+	}
+	return false, errutil.ErrAuthUserTypeNotAllowed
+}
+
+func (c *EContext) HasUserTypeByMapCode(codes map[string]bool) (bool, error) {
+	//skip immediately
+	if len(codes) == 0 {
+		return false, nil
+	}
+	if c.UserType != "" && codes[c.UserType] {
+		return true, nil
+	}
+	return false, errutil.ErrAuthUserTypeNotAllowed
 }
 
 func NewContext(ctx context.Context, eCtx *EContext) context.Context {

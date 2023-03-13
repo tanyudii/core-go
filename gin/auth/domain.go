@@ -13,9 +13,8 @@ type (
 	}
 	Service interface {
 		authenticate(c *gin.Context) (newCtx context.Context, err error)
-		authenticateGin(c *gin.Context) (context.Context, error)
-		authenticateToken(c *gin.Context, authorization string) (context.Context, error)
-		authorizedUserType(session *ectx.EContext, fullMethod string) bool
+		authenticateToken(c *gin.Context) (context.Context, error)
+		authorizedUserType(session *ectx.EContext, fullMethod string) (bool, error)
 		authorizedPermission(session *ectx.EContext, fullMethod string) error
 		authorizedScope(session *ectx.EContext, fullMethod string) error
 		authorizedInternalCall(ctx context.Context) bool
