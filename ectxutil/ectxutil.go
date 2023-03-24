@@ -52,3 +52,26 @@ func DuplicateCtx(ctx context.Context) (context.Context, error) {
 	}
 	return ectx.NewContext(context.Background(), eCtx), nil
 }
+
+func CreateInternalEContextDummy() *ectx.EContext {
+	return &ectx.EContext{
+		UserID:         "DummyUserID",
+		UserName:       "DummyUserName",
+		UserEmail:      "DummyUserEmail",
+		UserSerial:     "DummyUserSerial",
+		UserType:       "DummyUserType",
+		CompanyID:      "DummyCompanyID",
+		CompanySerial:  "DummyCompanySerial",
+		CompanyName:    "DummyCompanyName",
+		Permissions:    "DummyPermissions",
+		ClientID:       "DummyClientID",
+		ClientName:     "DummyClientName",
+		Scopes:         "*",
+		IsInternalCall: true,
+	}
+}
+
+func CreateGRPCContextDummy(ctx context.Context) context.Context {
+	eCtxDummy := CreateInternalEContextDummy()
+	return ectx.ParseToGrpcCtx(ectx.NewContext(ctx, eCtxDummy))
+}
