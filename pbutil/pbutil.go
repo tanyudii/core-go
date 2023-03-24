@@ -1,6 +1,7 @@
 package pbutil
 
 import (
+	"github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/tanyudii/core-go/common"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"time"
@@ -18,4 +19,13 @@ func PbTimestampToTime(val *timestamppb.Timestamp) *time.Time {
 		return nil
 	}
 	return common.PointerVal(val.AsTime())
+}
+
+func NullableStringValue(val string) *wrappers.StringValue {
+	if val == "" {
+		return nil
+	}
+	return &wrappers.StringValue{
+		Value: val,
+	}
 }
