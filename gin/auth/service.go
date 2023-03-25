@@ -37,7 +37,7 @@ func (s *service) authenticate(c *gin.Context) (context.Context, error) {
 	if err != nil {
 		return nil, err
 	} else if ok {
-		return nil, nil
+		return c, nil
 	}
 
 	newCtx, err := s.authenticateToken(c)

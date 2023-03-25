@@ -33,7 +33,7 @@ func (s *service) authenticate(ctx context.Context, info *grpc.UnaryServerInfo) 
 	if err != nil {
 		return nil, err
 	} else if ok {
-		return nil, nil
+		return ctx, nil
 	}
 
 	if newCtx, ok := s.authorizedInternalCall(ctx); ok {
