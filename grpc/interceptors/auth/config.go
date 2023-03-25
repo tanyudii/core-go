@@ -1,16 +1,8 @@
 package auth
 
-type Config struct {
-	graphqlMode bool
-}
+type Config struct{}
 
 type ConfigFunc func(c *Config)
-
-func GraphQLMode(m bool) ConfigFunc {
-	return func(c *Config) {
-		c.graphqlMode = m
-	}
-}
 
 func generateConfig(args ...ConfigFunc) *Config {
 	c := &Config{}

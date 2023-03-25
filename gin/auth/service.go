@@ -5,21 +5,25 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/tanyudii/core-go/auth"
 	"github.com/tanyudii/core-go/ectx"
 	"github.com/tanyudii/core-go/errutil"
 	"strings"
 )
 
 type service struct {
-	tokenService TokenService
+	authService  auth.Service
+	tokenService auth.TokenService
 	cfg          *Config
 }
 
 func newService(
-	tokenService TokenService,
+	authService auth.Service,
+	tokenService auth.TokenService,
 	args ...ConfigFunc,
 ) Service {
 	return &service{
+		authService:  authService,
 		tokenService: tokenService,
 		cfg:          generateConfig(args...),
 	}
@@ -29,7 +33,10 @@ func (s *service) authenticate(c *gin.Context) (context.Context, error) {
 	fullMethod := fmt.Sprintf("[%s] %s", c.Request.Method, c.Request.RequestURI)
 
 	//skip when route is public routes
-	if s.cfg.mapPublicRoutes[fullMethod] {
+	ok, err := s.authService.IsPublicRoute(c, fullMethod)
+	if err != nil {
+		return nil, err
+	} else if ok {
 		return nil, nil
 	}
 
@@ -42,28 +49,7 @@ func (s *service) authenticate(c *gin.Context) (context.Context, error) {
 		return nil, err
 	}
 
-	session, err := ectx.FromContextWithErr(newCtx)
-	if err != nil {
-		return nil, err
-	}
-
-	//if user authorized with type, will be skip other middleware
-	ok, err := s.authorizedUserType(session, fullMethod)
-	if err != nil {
-		return nil, err
-	} else if ok {
-		return newCtx, nil
-	}
-
-	if err = s.authorizedPermission(session, fullMethod); err != nil {
-		return nil, errutil.NewUnauthorizedError(err.Error())
-	}
-
-	if err = s.authorizedScope(session, fullMethod); err != nil {
-		return nil, errutil.NewUnauthorizedError(err.Error())
-	}
-
-	return newCtx, nil
+	return s.authService.Authenticate(newCtx, fullMethod)
 }
 
 func (s *service) authenticateToken(c *gin.Context) (context.Context, error) {
@@ -108,33 +94,4 @@ func (s *service) authenticateToken(c *gin.Context) (context.Context, error) {
 	reqCtx := ectx.NewEContext(md)
 	return ectx.NewContext(c.Request.Context(), reqCtx), nil
 
-}
-
-func (s *service) authorizedUserType(session *ectx.EContext, fullMethod string) (bool, error) {
-	//if trusted user type continue to process request
-	ok, err := session.HasUserTypeByMapCode(s.cfg.mapUserTypeTrusted)
-	if err != nil {
-		return false, err
-	} else if ok {
-		return ok, nil
-	}
-	return session.HasUserType(s.cfg.mapUserTypeRoutes[fullMethod])
-}
-
-func (s *service) authorizedPermission(session *ectx.EContext, fullMethod string) error {
-	_, err := session.HasPermission(s.cfg.mapPermissionRoutes[fullMethod])
-	return err
-}
-
-func (s *service) authorizedScope(session *ectx.EContext, fullMethod string) error {
-	_, err := session.HasScope(s.cfg.mapScopeRoutes[fullMethod])
-	return err
-}
-
-func (s *service) authorizedInternalCall(ctx context.Context) bool {
-	eCtx, ok := ectx.FromContext(ctx)
-	if !ok {
-		return false
-	}
-	return eCtx.IsInternal()
 }

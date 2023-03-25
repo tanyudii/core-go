@@ -2,13 +2,15 @@ package auth
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/tanyudii/core-go/auth"
 )
 
 func Authenticate(
-	tokenService TokenService,
+	authService auth.Service,
+	tokenService auth.TokenService,
 	args ...ConfigFunc,
 ) func(c *gin.Context) {
-	svc := newService(tokenService, args...)
+	svc := newService(authService, tokenService, args...)
 	return func(c *gin.Context) {
 		newCtx, err := svc.authenticate(c)
 		if err != nil {

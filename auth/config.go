@@ -12,6 +12,8 @@ type Config struct {
 	mapUserTypeRoutes   MapUserTypeRoutes
 	mapPermissionRoutes MapPermissionRoutes
 	mapScopeRoutes      MapScopeRoutes
+
+	routeService RouteService
 }
 
 type ConfigFunc func(c *Config)
@@ -43,6 +45,12 @@ func PermissionRoutes(r MapPermissionRoutes) ConfigFunc {
 func ScopeRoutes(r MapScopeRoutes) ConfigFunc {
 	return func(c *Config) {
 		c.mapScopeRoutes = r
+	}
+}
+
+func SetRouteService(r RouteService) ConfigFunc {
+	return func(c *Config) {
+		c.routeService = r
 	}
 }
 
