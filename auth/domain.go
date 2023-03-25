@@ -12,6 +12,8 @@ type Service interface {
 	authorizedUserType(session *ectx.EContext, userTypes []string) (bool, error)
 	authorizedPermission(session *ectx.EContext, permissions []string) error
 	authorizedScope(session *ectx.EContext, scopes []string) error
+
+	getRouteConfig(ctx context.Context, fullMethod string) (RouteConfig, error)
 }
 
 type (

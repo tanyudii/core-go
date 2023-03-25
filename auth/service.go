@@ -17,17 +17,7 @@ func NewService(args ...ConfigFunc) Service {
 }
 
 func (s *service) IsPublicRoute(ctx context.Context, fullMethod string) (bool, error) {
-	if s.cfg.mapPublicRoutes[fullMethod] {
-		return true, nil
-	}
-	if s.cfg.routeService == nil {
-		return false, nil
-	}
-	routeConfig, err := s.cfg.routeService.GetRouteConfig(ctx, fullMethod)
-	if err != nil {
-		return false, err
-	}
-	return routeConfig == nil, nil
+	return s.cfg.mapPublicRoutes[fullMethod], nil
 }
 
 func (s *service) Authenticate(ctx context.Context, fullMethod string) (context.Context, error) {
@@ -40,7 +30,7 @@ func (s *service) Authenticate(ctx context.Context, fullMethod string) (context.
 	routePermissions := s.cfg.mapPermissionRoutes[fullMethod]
 	routeScopes := s.cfg.mapScopeRoutes[fullMethod]
 
-	routeConfig, err := s.cfg.routeService.GetRouteConfig(ctx, fullMethod)
+	routeConfig, err := s.getRouteConfig(ctx, fullMethod)
 	if err != nil {
 		return nil, err
 	} else if routeConfig != nil {
@@ -87,4 +77,11 @@ func (s *service) authorizedPermission(session *ectx.EContext, permissions []str
 func (s *service) authorizedScope(session *ectx.EContext, scopes []string) error {
 	_, err := session.HasScope(scopes)
 	return err
+}
+
+func (s *service) getRouteConfig(ctx context.Context, fullMethod string) (RouteConfig, error) {
+	if s.cfg.routeService == nil {
+		return nil, nil
+	}
+	return s.cfg.routeService.GetRouteConfig(ctx, fullMethod)
 }
