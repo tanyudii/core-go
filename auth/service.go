@@ -17,6 +17,12 @@ func NewService(args ...ConfigFunc) Service {
 }
 
 func (s *service) IsPublicRoute(ctx context.Context, fullMethod string) (bool, error) {
+	if s.cfg.mapPublicRoutes[fullMethod] {
+		return true, nil
+	}
+	if s.cfg.routeService == nil {
+		return false, nil
+	}
 	routeConfig, err := s.cfg.routeService.GetRouteConfig(ctx, fullMethod)
 	if err != nil {
 		return false, err
