@@ -51,6 +51,5 @@ type (
 		GetPermissions() []string
 		GetScopes() []string
 		GetUserTypes() []string
-		GetRoles() []string
 	}
 )
