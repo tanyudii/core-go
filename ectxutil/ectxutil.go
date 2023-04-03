@@ -45,6 +45,17 @@ func GetCompanySerial(ctx context.Context) (string, error) {
 	return eCtx.CompanySerial, nil
 }
 
+func GetAcceptLanguage(ctx context.Context, defaultVal ...string) string {
+	var acceptLang string
+	if eCtx, ok := ectx.FromContext(ctx); ok {
+		acceptLang = eCtx.AcceptLanguage
+	}
+	if acceptLang == "" && len(defaultVal) > 0 {
+		return defaultVal[0]
+	}
+	return acceptLang
+}
+
 func DuplicateCtx(ctx context.Context) (context.Context, error) {
 	eCtx, err := ectx.FromContextWithErr(ctx)
 	if err != nil {

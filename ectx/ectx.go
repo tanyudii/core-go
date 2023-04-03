@@ -27,6 +27,7 @@ const (
 	RequestHeaderKeyIsInternalCall = "IsInternalCall"
 	RequestHeaderKeyAuthorization  = "Authorization"
 	RequestHeaderKeyRequestID      = "RequestID"
+	RequestHeaderKeyAcceptLanguage = "Accept-Language"
 )
 
 type EContext struct {
@@ -45,6 +46,7 @@ type EContext struct {
 	IsInternalCall bool
 	Authorization  string
 	RequestID      string
+	AcceptLanguage string
 }
 
 func NewEContext(md ContextMD) *EContext {
@@ -65,6 +67,7 @@ func NewEContext(md ContextMD) *EContext {
 		IsInternalCall: isInternalCall,
 		Authorization:  md.Get(strings.ToLower(RequestHeaderKeyAuthorization)),
 		RequestID:      md.Get(strings.ToLower(RequestHeaderKeyRequestID)),
+		AcceptLanguage: md.Get(strings.ToLower(RequestHeaderKeyAcceptLanguage)),
 	}
 }
 
@@ -85,6 +88,7 @@ func (c *EContext) ToContextMD(ctx context.Context) context.Context {
 	md.Set(strings.ToLower(RequestHeaderKeyIsInternalCall), strconv.FormatBool(c.IsInternalCall))
 	md.Set(strings.ToLower(RequestHeaderKeyAuthorization), c.Authorization)
 	md.Set(strings.ToLower(RequestHeaderKeyRequestID), c.RequestID)
+	md.Set(strings.ToLower(RequestHeaderKeyAcceptLanguage), c.AcceptLanguage)
 	ctx = NewContext(ctx, c)
 	return md.ToIncoming(ctx)
 }
@@ -201,6 +205,7 @@ func ParseToGrpcCtx(ctx context.Context, internalCall ...bool) context.Context {
 		newCtx.Add(strings.ToLower(RequestHeaderKeyIsInternalCall), strconv.FormatBool(isInternalCall))
 		newCtx.Add(strings.ToLower(RequestHeaderKeyAuthorization), r.Authorization)
 		newCtx.Add(strings.ToLower(RequestHeaderKeyRequestID), r.RequestID)
+		newCtx.Add(strings.ToLower(RequestHeaderKeyAcceptLanguage), r.AcceptLanguage)
 		return newCtx.ToOutgoing(ctx)
 	}
 	return ctx

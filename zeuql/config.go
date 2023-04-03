@@ -2,8 +2,8 @@ package zeuql
 
 const (
 	DefaultGraphQLPort      = "8080"
-	DefaultGraphQLPath      = "graphql"
-	DefaultPlaygroundPath   = "playground"
+	DefaultGraphQLPath      = "/graphql"
+	DefaultPlaygroundPath   = "/playground"
 	DefaultEnablePlayground = true
 	DefaultEnableCORS       = true
 	DefaultEnablePrometheus = true

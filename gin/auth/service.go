@@ -68,30 +68,33 @@ func (s *service) authenticateToken(c *gin.Context) (context.Context, error) {
 		return nil, err
 	}
 
-	md := ectx.ContextMD{}
-	md.Set(strings.ToLower(ectx.RequestHeaderKeyScopes), respTokenInfo.Scope)
-	md.Set(strings.ToLower(ectx.RequestHeaderKeyAuthorization), token)
+	eCtx, ok := ectx.FromContext(c.Request.Context())
+	if !ok {
+		eCtx = &ectx.EContext{}
+	}
+
+	eCtx.Scopes = respTokenInfo.Scope
+	eCtx.Authorization = token
 
 	tokenInfo := respTokenInfo.TokenInfo
 	if tokenInfo != nil {
-		md.Set(strings.ToLower(ectx.RequestHeaderKeyUserID), tokenInfo.UserID)
-		md.Set(strings.ToLower(ectx.RequestHeaderKeyUserSerial), tokenInfo.UserSerial)
-		md.Set(strings.ToLower(ectx.RequestHeaderKeyUserName), tokenInfo.UserName)
-		md.Set(strings.ToLower(ectx.RequestHeaderKeyUserEmail), tokenInfo.UserEmail)
-		md.Set(strings.ToLower(ectx.RequestHeaderKeyUserType), tokenInfo.UserType)
-		md.Set(strings.ToLower(ectx.RequestHeaderKeyCompanyID), tokenInfo.CompanyID)
-		md.Set(strings.ToLower(ectx.RequestHeaderKeyCompanySerial), tokenInfo.CompanySerial)
-		md.Set(strings.ToLower(ectx.RequestHeaderKeyCompanyName), tokenInfo.CompanyName)
-		md.Set(strings.ToLower(ectx.RequestHeaderKeyPermissions), strings.Join(tokenInfo.Permissions, ","))
+		eCtx.UserID = tokenInfo.UserID
+		eCtx.UserSerial = tokenInfo.UserSerial
+		eCtx.UserName = tokenInfo.UserName
+		eCtx.UserEmail = tokenInfo.UserEmail
+		eCtx.UserType = tokenInfo.UserType
+		eCtx.CompanyID = tokenInfo.CompanyID
+		eCtx.CompanySerial = tokenInfo.CompanySerial
+		eCtx.CompanyName = tokenInfo.CompanyName
+		eCtx.Permissions = strings.Join(tokenInfo.Permissions, ",")
 	}
 
 	clientInfo := respTokenInfo.ClientInfo
 	if clientInfo != nil {
-		md.Set(strings.ToLower(ectx.RequestHeaderKeyClientID), clientInfo.ClientID)
-		md.Set(strings.ToLower(ectx.RequestHeaderKeyClientName), clientInfo.ClientName)
+		eCtx.ClientID = clientInfo.ClientID
+		eCtx.ClientName = clientInfo.ClientName
 	}
 
-	reqCtx := ectx.NewEContext(md)
-	return ectx.NewContext(c.Request.Context(), reqCtx), nil
+	return ectx.NewContext(c.Request.Context(), eCtx), nil
 
 }

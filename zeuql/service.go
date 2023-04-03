@@ -98,6 +98,9 @@ func (s *service) ListenAndServeGraphQL(ctx context.Context) (err error) {
 		Handler: r,
 	}
 
+	r.Use(ginmiddleware.GinRequestID())
+	r.Use(ginmiddleware.GinAcceptLanguage())
+
 	//register CORS when config enabled
 	if s.cfg.enableCORS {
 		r.Use(ginmiddleware.GinCORS())

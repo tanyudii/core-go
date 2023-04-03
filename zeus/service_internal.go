@@ -5,6 +5,7 @@ import (
 	"fmt"
 	grpcmiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	acceptlanguage "github.com/tanyudii/core-go/grpc/interceptors/accept-language"
 	"github.com/tanyudii/core-go/grpc/interceptors/recovery"
 	"github.com/tanyudii/core-go/grpc/interceptors/requestid"
 	muxmiddleware "github.com/tanyudii/core-go/mux/middleware"
@@ -18,6 +19,7 @@ func (s *service) initInterceptors() {
 	s.RegisterUnaryServerInterceptor(
 		requestid.UnaryServerInterceptor(),
 		recovery.UnaryServerInterceptor(),
+		acceptlanguage.UnaryServerInterceptor(),
 	)
 }
 

@@ -2,21 +2,16 @@ package requestid
 
 import (
 	"context"
-	"fmt"
-	"strings"
-	"time"
-
-	"github.com/google/uuid"
 	"github.com/tanyudii/core-go/ectx"
 	"google.golang.org/grpc"
+	"strings"
 )
 
 func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (_ interface{}, err error) {
 		md := ectx.FromIncoming(ctx)
-		if md.Get(strings.ToLower(ectx.RequestHeaderKeyRequestID)) == "" {
-			requestID := fmt.Sprintf("%s-%d", uuid.NewString(), time.Now().Unix())
-			md.Set(strings.ToLower(ectx.RequestHeaderKeyRequestID), requestID)
+		if acceptLang := md.Get(strings.ToLower("grpcgateway-" + ectx.RequestHeaderKeyAcceptLanguage)); acceptLang != "" {
+			md.Set(strings.ToLower(ectx.RequestHeaderKeyAcceptLanguage), acceptLang)
 			ctx = ectx.NewContext(ctx, ectx.NewEContext(md))
 		}
 		return handler(ctx, req)

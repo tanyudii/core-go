@@ -93,6 +93,6 @@ func (s *service) authenticateToken(ctx context.Context) (context.Context, error
 
 func (s *service) authorizedInternalCall(ctx context.Context) (context.Context, bool) {
 	md := ectx.FromIncoming(ctx)
-	reqCtx := ectx.NewEContext(md)
-	return md.ToIncoming(ectx.NewContext(ctx, reqCtx)), reqCtx.IsInternal()
+	eCtx := ectx.NewEContext(md)
+	return md.ToIncoming(ectx.NewContext(ctx, eCtx)), eCtx.IsInternal()
 }

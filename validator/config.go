@@ -2,70 +2,44 @@ package validator
 
 import (
 	"github.com/go-playground/locales"
-	"github.com/go-playground/locales/en"
+	"github.com/go-playground/locales/en_US"
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
-	entranslations "github.com/go-playground/validator/v10/translations/en"
-)
-
-const (
-	DefaultLocaleName = "en"
+	"github.com/go-playground/validator/v10/translations/en"
 )
 
 var (
-	DefaultLocale = en.New()
+	DefaultLocaleName  = "en_US"
+	DefaultLocaleTrans = en_US.New()
 )
 
 type Config struct {
-	locale            locales.Translator
-	localeName        string
-	uni               *ut.UniversalTranslator
-	trans             ut.Translator
-	registerTransFunc TransFunc
+	mapLocalesTranslator   map[string]locales.Translator
+	mapRegisterTranslation map[string]RegisterTranslationFunc
 }
 
 type ConfigFunc func(c *Config)
 
-type TransFunc func(v *validator.Validate, trans ut.Translator) (err error)
+type RegisterTranslationFunc func(v *validator.Validate, trans ut.Translator) (err error)
 
 func generateConfig(args ...ConfigFunc) *Config {
-	c := &Config{locale: DefaultLocale, localeName: DefaultLocaleName}
+	c := &Config{
+		mapLocalesTranslator:   make(map[string]locales.Translator),
+		mapRegisterTranslation: make(map[string]RegisterTranslationFunc),
+	}
+
+	//register default locale en_US
+	RegisterLocaleTranslator(DefaultLocaleName, DefaultLocaleTrans, en.RegisterDefaultTranslations)(c)
+
 	for i := range args {
 		args[i](c)
-	}
-	if c.uni == nil {
-		c.uni = c.defaultUni()
-	}
-	if c.trans == nil {
-		c.trans = c.defaultTrans()
-	}
-	if c.registerTransFunc == nil {
-		c.registerTransFunc = entranslations.RegisterDefaultTranslations
 	}
 	return c
 }
 
-func Locale(l locales.Translator, name string) ConfigFunc {
+func RegisterLocaleTranslator(name string, trans locales.Translator, fn RegisterTranslationFunc) ConfigFunc {
 	return func(c *Config) {
-		c.locale = l
-		c.localeName = name
-	}
-}
-
-func Uni(uni *ut.UniversalTranslator) ConfigFunc {
-	return func(c *Config) {
-		c.uni = uni
-	}
-}
-
-func Trans(t ut.Translator) ConfigFunc {
-	return func(c *Config) {
-		c.trans = t
-	}
-}
-
-func RegisterTransFunc(fn TransFunc) ConfigFunc {
-	return func(c *Config) {
-		c.registerTransFunc = fn
+		c.mapLocalesTranslator[name] = trans
+		c.mapRegisterTranslation[name] = fn
 	}
 }
