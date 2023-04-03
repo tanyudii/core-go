@@ -2,6 +2,8 @@ package zeuql
 
 const (
 	DefaultGraphQLPort      = "8080"
+	DefaultGraphQLPath      = "graphql"
+	DefaultPlaygroundPath   = "playground"
 	DefaultEnablePlayground = true
 	DefaultEnableCORS       = true
 	DefaultEnablePrometheus = true
@@ -10,6 +12,8 @@ const (
 
 type Config struct {
 	graphQLPort      string
+	graphQLPath      string
+	playgroundPath   string
 	enableCORS       bool
 	enablePlayground bool
 	enablePrometheus bool
@@ -21,6 +25,8 @@ type ConfigFunc func(c *Config)
 func generateConfig(args ...ConfigFunc) *Config {
 	c := &Config{
 		graphQLPort:      DefaultGraphQLPort,
+		graphQLPath:      DefaultGraphQLPath,
+		playgroundPath:   DefaultPlaygroundPath,
 		enablePlayground: DefaultEnablePlayground,
 		enableCORS:       DefaultEnableCORS,
 		enablePrometheus: DefaultEnablePrometheus,
@@ -35,6 +41,18 @@ func generateConfig(args ...ConfigFunc) *Config {
 func GraphQLPort(p string) ConfigFunc {
 	return func(c *Config) {
 		c.graphQLPort = p
+	}
+}
+
+func GraphQLPath(p string) ConfigFunc {
+	return func(c *Config) {
+		c.graphQLPath = p
+	}
+}
+
+func PlaygroundPath(p string) ConfigFunc {
+	return func(c *Config) {
+		c.playgroundPath = p
 	}
 }
 
