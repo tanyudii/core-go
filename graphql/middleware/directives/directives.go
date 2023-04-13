@@ -17,10 +17,6 @@ func Auth(ctx context.Context, _ interface{}, next graphql.Resolver) (res interf
 }
 
 func HasPermission(ctx context.Context, obj interface{}, next graphql.Resolver, p string) (res interface{}, err error) {
-	if _, err = Auth(ctx, obj, next); err != nil {
-		return nil, err
-	}
-
 	eCtx, err := ectx.FromContextWithErr(ctx)
 	if err != nil {
 		return nil, err
@@ -38,10 +34,6 @@ func HasPermission(ctx context.Context, obj interface{}, next graphql.Resolver, 
 }
 
 func HasScope(ctx context.Context, obj interface{}, next graphql.Resolver, s string) (res interface{}, err error) {
-	if _, err = Auth(ctx, obj, next); err != nil {
-		return nil, err
-	}
-
 	eCtx, err := ectx.FromContextWithErr(ctx)
 	if err != nil {
 		return nil, err
@@ -59,10 +51,6 @@ func HasScope(ctx context.Context, obj interface{}, next graphql.Resolver, s str
 }
 
 func HasUserType(ctx context.Context, obj interface{}, next graphql.Resolver, t string) (res interface{}, err error) {
-	if _, err = Auth(ctx, obj, next); err != nil {
-		return nil, err
-	}
-
 	eCtx, err := ectx.FromContextWithErr(ctx)
 	if err != nil {
 		return nil, err
