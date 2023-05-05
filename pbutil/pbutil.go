@@ -1,8 +1,10 @@
 package pbutil
 
 import (
+	"encoding/json"
 	"github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/tanyudii/core-go/common"
+	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 	"time"
@@ -173,4 +175,18 @@ func NullableStringValue(val string) *wrappers.StringValue {
 	return &wrappers.StringValue{
 		Value: val,
 	}
+}
+
+func MapInterfaceToPbStruct(val map[string]interface{}) *structpb.Struct {
+	jsonVal, _ := json.Marshal(val)
+	valPb := structpb.Struct{}
+	_ = json.Unmarshal(jsonVal, &valPb)
+	return &valPb
+}
+
+func PbStructToMapInterface(val *structpb.Struct) map[string]interface{} {
+	if val == nil {
+		return nil
+	}
+	return val.AsMap()
 }
