@@ -16,6 +16,8 @@ type Service interface {
 	GetQueue() taskq.Queue
 	RegisterWorker(workers ...Worker)
 	AddMessage(ctx context.Context, name string, args ...interface{}) error
+	AddMessageRaw(msg *taskq.Message) error
+	AddMessageWithSchedule(ctx context.Context, taskName string, schedule *time.Time, args ...interface{}) error
 }
 
 type service struct {
@@ -72,5 +74,19 @@ func (s *service) RegisterWorker(workers ...Worker) {
 func (s *service) AddMessage(ctx context.Context, taskName string, args ...interface{}) error {
 	msg := taskq.NewMessage(ctx, args...)
 	msg.TaskName = taskName
+	return s.AddMessageRaw(msg)
+}
+
+func (s *service) AddMessageWithSchedule(ctx context.Context, taskName string, schedule *time.Time, args ...interface{}) error {
+	now := time.Now()
+	msg := taskq.NewMessage(ctx, args...)
+	msg.TaskName = taskName
+	if schedule != nil && schedule.After(now) {
+		msg.SetDelay(schedule.Sub(now))
+	}
+	return s.queue.Add(msg)
+}
+
+func (s *service) AddMessageRaw(msg *taskq.Message) error {
 	return s.queue.Add(msg)
 }
