@@ -10,6 +10,13 @@ const (
 	MaximumLimit = 1000
 )
 
+type DataWithPaging[T any] struct {
+	Data        T
+	Total       int64
+	TotalPage   int32
+	CurrentPage int32
+}
+
 type Pagination struct {
 	Page      int32
 	Limit     int32
