@@ -23,6 +23,12 @@ func NewPagination(page int32, limit int32) *Pagination {
 	return p
 }
 
+func NewPaginationWithMax(page int32) *Pagination {
+	p := &Pagination{Page: page, Limit: MaximumLimit}
+	p.Validate()
+	return p
+}
+
 func (p *Pagination) Validate() *Pagination {
 	if p.Page <= 0 {
 		p.Page = DefaultPage
@@ -46,4 +52,12 @@ func (p *Pagination) GetOffset() int32 {
 		offset = p.Limit * (p.Page - 1)
 	}
 	return offset
+}
+
+func (p *Pagination) HasNextPage() bool {
+	return p.Page < p.TotalPage
+}
+
+func (p *Pagination) IncrementPage() {
+	p.Page++
 }
