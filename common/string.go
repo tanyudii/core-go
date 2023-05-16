@@ -30,13 +30,14 @@ func SeparatedStringToMapBool(val, sep string) map[string]bool {
 	return ret
 }
 
-func AppendSeparatedString(current, new, sep string) string {
-	if current == "" {
-		return new
-	}
-	return current + sep + new
-}
-
 func IsStringInSeparatedString(val, check, sep string) bool {
 	return SeparatedStringToMapBool(val, sep)[check]
+}
+
+func AppendSeparatedStrings(current, sep string, values ...string) string {
+	newValue := strings.Join(values, sep)
+	if current == "" {
+		return newValue
+	}
+	return current + sep + newValue
 }
