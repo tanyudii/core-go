@@ -7,3 +7,11 @@ func SliceToMap[T any, K comparable](slice []T, keyFunc func(T) K) map[K]T {
 	}
 	return result
 }
+
+func SliceStringToMapBool(slice []string) map[string]bool {
+	result := make(map[string]bool)
+	for _, val := range slice {
+		result[val] = true
+	}
+	return result
+}
