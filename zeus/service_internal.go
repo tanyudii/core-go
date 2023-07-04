@@ -12,6 +12,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/reflection"
 	"net/http"
 )
 
@@ -33,6 +34,10 @@ func (s *service) initConfigRestServeMuxOpts() {
 
 func (s *service) initGRPCServer() {
 	s.server = grpc.NewServer(grpc.UnaryInterceptor(grpcmiddleware.ChainUnaryServer(s.interceptors.serverUnary...)))
+}
+
+func (s *service) initReflection() {
+	reflection.Register(s.GetServer())
 }
 
 func (s *service) initDefaultPrometheusCollectors() {
