@@ -69,6 +69,7 @@ func (s *service) Init() {
 	s.initConfigRestServeMuxOpts()
 	s.initGRPCServer()
 	s.initDefaultPrometheusCollectors()
+	s.initReflection()
 }
 
 func (s *service) Shutdown(ctx context.Context) error {
