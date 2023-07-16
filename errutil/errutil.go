@@ -1,6 +1,7 @@
 package errutil
 
 import (
+	"fmt"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -61,4 +62,8 @@ func IsErrorName(err error, name string) bool {
 		}
 	}
 	return false
+}
+
+func Wrap(err, prevErr error) error {
+	return fmt.Errorf("%w: %w", err, prevErr)
 }
