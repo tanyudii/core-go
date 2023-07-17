@@ -30,6 +30,10 @@ const (
 	RequestHeaderKeyAcceptLanguage = "Accept-Language"
 )
 
+var (
+	ErrFailedGetECtx = errors.New("failed to get ectx")
+)
+
 type EContext struct {
 	UserID         string
 	UserName       string
@@ -178,7 +182,7 @@ func FromContext(ctx context.Context) (*EContext, bool) {
 func FromContextWithErr(ctx context.Context) (*EContext, error) {
 	val, ok := FromContext(ctx)
 	if !ok {
-		return nil, errors.New("failed to get eCtx")
+		return nil, ErrFailedGetECtx
 	}
 	return val, nil
 }
