@@ -2,6 +2,7 @@ package common
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 )
 
@@ -32,6 +33,11 @@ func SeparatedStringToMapBool(val, sep string) map[string]bool {
 
 func IsStringInSeparatedString(val, check, sep string) bool {
 	return SeparatedStringToMapBool(val, sep)[check]
+}
+
+func IsValidUUID(uuid string) bool {
+	r := regexp.MustCompile("^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$")
+	return r.MatchString(uuid)
 }
 
 func AppendSeparatedStrings(current, sep string, values ...string) string {

@@ -64,6 +64,6 @@ func IsErrorName(err error, name string) bool {
 	return false
 }
 
-func Wrap(err, prevErr error) error {
+func Wrap(prevErr, err error) error {
 	return fmt.Errorf("%w: %w", err, prevErr)
 }
